@@ -16,4 +16,4 @@ function Import () {
     }
 }
 
-module.exports = {Import};
+module.exports = { Import };

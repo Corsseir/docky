@@ -1,3 +1,16 @@
+table {
+    font-size: 11pt;
+}
+
 table td {
     text-align: center;
+}
+
+table td:nth-child(odd) {
+    width: 50%;
+}
+
+table td:nth-child(even) {
+    width: 50%;
+    color: #bdbdbd;
 }
