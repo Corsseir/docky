@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Docky</title>
+        <link rel="stylesheet" href="public/vendors/font-awesome-4.6.3/css/font-awesome.css">
+        <link rel="stylesheet" href="public/stylesheets/fonts.css">
+        <link rel="stylesheet" href="public/stylesheets/index/index.css">
+        <link rel="import" href="sections/native-ui/default.html" id="link-section-default">
+        <link rel="import" href="sections/native-ui/info.html" id="link-section-info">
+    </head>
+    <body>
+        <div class="side-display" id="side-left">
+            <div class="tab-item tab-item-selected">
+                Katalogi
+            </div
+            ><div class="tab-item">
+                Tagi
+            </div>
+            <ul class="folder-list-main folder-list">
+                <li><span class="folder"><i class="fa fa-folder"></i> Folder 1</span></li>
+                <li><span class="folder"><i class="fa fa-folder"></i> Folder 2</span></li>
+                <li><span class="folder"><i class="fa fa-folder"></i> Folder 3</span></li>
+                <li>
+                    <span class="folder"><i class="fa fa-folder-open"></i> Folder 4</span>
+                    <ul class="folder-list">
+                        <li><span class="file"><i class="fa fa-file-pdf-o"></i> Plik 2</span></li>
+                        <li><span class="file"><i class="fa fa-file-pdf-o"></i> Plik 3</span></li>
+                        <li><span class="folder"><i class="fa fa-folder"></i> Folder 1</span></li>
+                        <li>
+                            <span class="folder"><i class="fa fa-folder-open"></i> Folder 2</span>
+                            <ul class="folder-list">
+                                <li><span class="folder"><i class="fa fa-folder"></i> Folder 1</span></li>
+                            </ul>
+                        </li>
+                        <li><span class="folder"><i class="fa fa-folder"></i> Folder 3</span></li>
+                        <li>
+                            <span class="folder"><i class="fa fa-folder-open"></i> Folder 4</span>
+                            <ul class="folder-list">
+                                <li><span class="folder"><i class="fa fa-folder"></i> Folder 1</span></li>
+                                <li><span class="folder"><i class="fa fa-folder"></i> Folder 2</span></li>
+                                <li><span class="folder"><i class="fa fa-folder"></i> Folder 3</span></li>
+                            </ul>
+                        </li>
+                        <li><span><i class="fa fa-folder"></i> Folder 5</span></li>
+                    </ul>
+                </li>
+                <li><span><i class="fa fa-folder"></i> Folder 5</span></li>
+            </ul>
+        </div
+        ><div class="side-display" id="side-right">
+
+        </div>
+    </body>
+
+    <script>
+        const $ = require('jquery');
+        const Import = require('./helpers/import.js').Import
+        // You can also require other files to run in this process
+        require('./renderer.js')
+    </script>
+</html>
