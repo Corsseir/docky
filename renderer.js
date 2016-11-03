@@ -22,7 +22,7 @@ function Folder () {
             if(typeof(folderList) !== 'undefined') {
                 folderList.show();
             }
-        } else if(folderIcon.hasClass('fa-folder-open')) {
+        } else if(folderIcon.hasClass('fjs addeventlistenera-folder-open')) {
             folderIcon.removeClass('fa-folder-open');
             folderIcon.addClass('fa-folder');
 
