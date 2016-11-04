@@ -11,6 +11,9 @@
     </head>
     <body>
         <div class="side-display" id="side-left">
+            <div class="button-bar">
+                <div id="scan" class="button-default">Skanuj test</div>
+            </div>
             <div class="tab-item tab-item-selected">
                 Katalogi
             </div
@@ -55,12 +58,13 @@
         ><div class="side-display" id="side-right">
 
         </div>
+        <script>require('./scanDirs.js');</script>
     </body>
 
     <script>
         const $ = require('jquery');
         const Import = require('./helpers/import.js').Import
         // You can also require other files to run in this process
-        require('./renderer.js')
+        require('./renderer.js');
     </script>
 </html>
