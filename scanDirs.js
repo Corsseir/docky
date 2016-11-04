@@ -10,6 +10,7 @@ const overwritePath = "./DockyLibrary/Overwrite"
 const util = require('util')
 let streamEqual = require('stream-equal')
 let path = require("path")
+var nana = smiec
 
 
 function scanDirs () {
