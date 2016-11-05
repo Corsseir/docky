@@ -17,21 +17,43 @@ const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
 
-
 function createLocalLib () {
     createDir(libraryMain)
     createDir(libraryPath)
     createDir(overwritePath)
     var pdfs = scan()
-    fillLib(pdfs)
-    addToDb(pdfs)
+    var libPdfs = []
+    fillLib(pdfs, function (r) {
+        addAllToDb (r)
+    })
 }
 
-function addToDb (pdfs) {
-    for (var i = 0; i < pdfs.length; i++) {
-        var fileName = path.basename(pdfs[i]).toString()
-        DatabaseOperation.File.CreateFile(null, fileName)
-    }
+function addEntryToDb (fileName, fileLocalPath, fileSysPath) {
+    DatabaseOperation.File.CreateFile(null, fileName, function addFileId (){
+        var fileId = this.lastID
+        console.log("Jestem w create file " + fileId)
+        DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId(){
+            var locationId = this.lastID
+            console.log("Jestem w create location " + locationId + " test file: " + fileId)
+            DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {console.log("Skonczylem dodawać lokalną")})
+        })
+        DatabaseOperation.Location.CreateLocation("global", fileSysPath, function addLocationId(){
+            var locationId2 = this.lastID
+            console.log("Jestem w create location " + locationId2 + " test file: " + fileId)
+            DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId2, function () {console.log("Skonczylem dodawać globalną")})
+        })
+    })
+}
+
+function addAllToDb (libPDFs) {
+    console.log("Jestem w add to DB")
+    libPDFs.forEach(function (element) {
+        var fileLocalPath = element.local
+        var fileSysPath = element.filesys
+        var fileName = path.basename(element.filesys).toString()
+        var origin = element.original
+        addEntryToDb(fileName, fileLocalPath, fileSysPath, origin)
+    })
 }
 
 function scan () {
@@ -91,17 +113,36 @@ function createDir (path) {
     }
 }
 
-function fillLib (pdfArray) {
-    for (var i = 0; i < pdfArray.length; i++) {
-        var fName = path.basename(pdfArray[i]).toString()
+function fillLib (pdfArray, callback) {
+    var libPathArray = []
+    var x = 0
+    pdfArray.forEach(function (element) {
+        var fName = path.basename(element).toString()
         var pathInLib = libraryPath + "/" + fName
-        var filePath = pdfArray[i]
-        addFile(pathInLib, filePath)
-    }
+        var filePath = element
+        addFile(pathInLib, filePath, function (r){
+            x = appendToArray(libPathArray, r)
+            console.log(x)
+            if (pdfArray.length === x) {
+                console.log("skoczyelm fill lib")
+                console.log("xwynosił: " + x)
+                var result = libPathArray
+                callback && callback(result)
+            }
+        })
+    })
 }
 
-function addFile (pathInLib, filePath) {
-    try {
+function appendToArray(array, entry) {
+    console.log("appendToArray")
+    array.push(entry)
+    //array.forEach(function(element) {console.log("Ścieżka do pdfa test: " + element)})
+    console.log("Dopisałem: " + entry.local)
+    return array.length
+}
+
+function addFile (pathInLib, filePath, callback) {
+   try {
         fs.accessSync(pathInLib, fs.F_OK)
         console.log("plik: " + pathInLib + " już istnieje")
         var file1 = fs.createReadStream(pathInLib.toString())
@@ -114,20 +155,26 @@ function addFile (pathInLib, filePath) {
                 var originDirName = overwritePath + "/" + path.basename(filePath, ".pdf").toString()
                 createDir(originDirName)
                 var newName = originDirName + "/" + oldName + "_new" + ".pdf"
-                addFile(newName, filePath)
+                addFile(newName, filePath, callback)
             }
         })
     } catch (e) {
         if (e.code === 'ENOENT') {
             console.log("Zapisuje plik: " + path.basename(filePath) + " do " + pathInLib)
             fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
+            console.log("Zwracam lokalizację lokalną: " + pathInLib)
+            //localLocations.push(pathInLib)
+            var r = new Object()
+            r.filesys = filePath
+            r.local = pathInLib
+            r.original = path.basename(filePath).toString()
+            console.log("addFile")
+            callback && callback(r)
         } else {
             throw e
         }
     }
-    return pathInLib
 }
 
 var scanClick = document.getElementById("scan")
 var test = scanClick.addEventListener('click', createLocalLib)
-console.log(test)
