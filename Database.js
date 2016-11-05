@@ -47,9 +47,11 @@ class DatabaseOperation
 
 DatabaseOperation.Tag = class Tag
 {
-    static CreateTag(Name, Value)
+    // The signature of the callback is function(err) {}
+    // If execution was successful, the this object will contain property named lastID
+    static CreateTag(Name, Value, Callback)
     {
-        Database.run('INSERT INTO Tag (Name, Value) VALUES ($Name, $Value)', {$Name: Name, $Value: Value}, ErrorCallback)
+        Database.run('INSERT INTO Tag (Name, Value) VALUES ($Name, $Value)', {$Name: Name, $Value: Value}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
@@ -77,9 +79,11 @@ DatabaseOperation.Tag = class Tag
 
 DatabaseOperation.Location = class Location
 {
-    static CreateLocation(Type, Location)
+    // The signature of the callback is function(err) {}
+    // If execution was successful, the this object will contain property named lastID
+    static CreateLocation(Type, Location, Callback)
     {
-        Database.run('INSERT INTO Location (Type, Location) VALUES ($Type, $Location)', {$Type: Type, $Location: Location}, ErrorCallback);
+        Database.run('INSERT INTO Location (Type, Location) VALUES ($Type, $Location)', {$Type: Type, $Location: Location}, Callback);
     }
 
     // The signature of the callback is function(err, row) {}
@@ -107,9 +111,11 @@ DatabaseOperation.Location = class Location
 
 DatabaseOperation.Collection = class Collection
 {
-    static CreateCollection(Name, ID_ParentCollection)
+    // The signature of the callback is function(err) {}
+    // If execution was successful, the this object will contain property named lastID
+    static CreateCollection(Name, ID_ParentCollection, Callback)
     {
-        Database.run('INSERT INTO Collection (Name, ID_ParentCollection) VALUES ($Name, $ID_ParentCollection)', {$Name: Name, $ID_ParentCollection: ID_ParentCollection}, ErrorCallback)
+        Database.run('INSERT INTO Collection (Name, ID_ParentCollection) VALUES ($Name, $ID_ParentCollection)', {$Name: Name, $ID_ParentCollection: ID_ParentCollection}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
@@ -137,9 +143,11 @@ DatabaseOperation.Collection = class Collection
 
 DatabaseOperation.BLOB = class BLOB
 {
-    static CreateBLOB(BLOB, Checksum)
+    // The signature of the callback is function(err) {}
+    // If execution was successful, the this object will contain property named lastID
+    static CreateBLOB(BLOB, Checksum, Callback)
     {
-        Database.run('INSERT INTO BLOB (BLOB, Checksum) VALUES ($BLOB, $Checksum)', {$BLOB: BLOB, $Checksum: Checksum}, ErrorCallback)
+        Database.run('INSERT INTO BLOB (BLOB, Checksum) VALUES ($BLOB, $Checksum)', {$BLOB: BLOB, $Checksum: Checksum}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
@@ -167,9 +175,11 @@ DatabaseOperation.BLOB = class BLOB
 
 DatabaseOperation.File = class File
 {
-    static CreateFile(ID_BLOB, Filename)
+    // The signature of the callback is function(err) {}
+    // If execution was successful, the this object will contain property named lastID
+    static CreateFile(ID_BLOB, Filename, Callback)
     {
-        Database.run('INSERT INTO File (ID_BLOB, Filename) VALUES ($ID_BLOB, $Filename)', {$ID_BLOB: ID_BLOB, $Filename: Filename}, ErrorCallback)
+        Database.run('INSERT INTO File (ID_BLOB, Filename) VALUES ($ID_BLOB, $Filename)', {$ID_BLOB: ID_BLOB, $Filename: Filename}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
