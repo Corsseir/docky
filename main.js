@@ -8,6 +8,7 @@ const Database = require('./Database.js').Database
 const DatabaseOperation = require('./Database.js').DatabaseOperation
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+
 let mainWindow
 
 function createWindow () {
@@ -27,6 +28,8 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
+  DatabaseOperation.DropTables()
+  DatabaseOperation.CreateTables()
 }
 
 // This method will be called when Electron has finished
