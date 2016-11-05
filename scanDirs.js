@@ -7,20 +7,28 @@ const {dialog} = require('electron').remote
 const fs = require ('fs')
 const libraryPath = "./DockyLibrary"
 const overwritePath = "./DockyLibrary/Overwrite"
-const util = require('util')
 let streamEqual = require('stream-equal')
 let path = require("path")
 
-function scanDirs () {
+function createLocalLib () {
+    createDir(libraryPath)
+    createDir(overwritePath)
+    var pdfs = scan()
+    fillLib(pdfs)
+}
+
+function scan () {
     var rootPath = dialog.showOpenDialog({properties:['openDirectory']})
+    var pdfs = scanDirs(rootPath)
+    return pdfs
+}
+
+function scanDirs (rootPath) {
     var dirs = []
     var pdfs = []
     dirs.push(rootPath.toString())
     listPDFs(dirs[0], dirs, pdfs)
-    pdfs.forEach(function(element) {console.log("Ścieżka do pdfa: " + element)})
-    createDir(libraryPath)
-    createDir(overwritePath)
-    createLib(pdfs)
+    //pdfs.forEach(function(element) {console.log("Ścieżka do pdfa: " + element)})
     return pdfs
 }
 
@@ -66,7 +74,7 @@ function createDir (path) {
     }
 }
 
-function createLib (pdfArray) {
+function fillLib (pdfArray) {
     for (var i = 0; i < pdfArray.length; i++) {
         var fName = path.basename(pdfArray[i]).toString()
         var pathInLib = libraryPath + "/" + fName
@@ -104,4 +112,5 @@ function addFile (pathInLib, filePath) {
 }
 
 var scanClick = document.getElementById("scan")
-scanClick.addEventListener('click', scanDirs)
+var test = scanClick.addEventListener('click', createLocalLib)
+console.log(test)
