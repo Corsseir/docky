@@ -5,8 +5,8 @@
 //Następnie tworzy katalog na pliki pdf
 const {dialog} = require('electron').remote
 const fs = require ('fs')
-const libraryPath = "./DockyLibrary"
-const overwritePath = "./DockyLibrary/Overwrite"
+const libraryPath = "./DockyLibrary/Zeskanowane"
+const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
 let streamEqual = require('stream-equal')
 let path = require("path")
 
