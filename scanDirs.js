@@ -3,18 +3,35 @@
  */
 //Rozpoczyna skanowanie folderów w celu znalezienia plików pdf po wcisnięciu elementu gui o id = "scan"
 //Następnie tworzy katalog na pliki pdf
+// electron
 const {dialog} = require('electron').remote
+//node
 const fs = require ('fs')
+let path = require("path")
+let streamEqual = require('stream-equal')
+//pliki wlasne
+const Database = require('./Database.js').Database
+const DatabaseOperation = require('./Database.js').DatabaseOperation
+//sciezki
+const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
-let streamEqual = require('stream-equal')
-let path = require("path")
+
 
 function createLocalLib () {
+    createDir(libraryMain)
     createDir(libraryPath)
     createDir(overwritePath)
     var pdfs = scan()
     fillLib(pdfs)
+    addToDb(pdfs)
+}
+
+function addToDb (pdfs) {
+    for (var i = 0; i < pdfs.length; i++) {
+        var fileName = path.basename(pdfs[i]).toString()
+        DatabaseOperation.File.CreateFile(null, fileName)
+    }
 }
 
 function scan () {
@@ -86,7 +103,7 @@ function fillLib (pdfArray) {
 function addFile (pathInLib, filePath) {
     try {
         fs.accessSync(pathInLib, fs.F_OK)
-        console.log("plik: " + pathInLib + " istnieje")
+        console.log("plik: " + pathInLib + " już istnieje")
         var file1 = fs.createReadStream(pathInLib.toString())
         var file2 = fs.createReadStream(filePath.toString())
         streamEqual(file1, file2, function (err, equal) {
@@ -98,17 +115,17 @@ function addFile (pathInLib, filePath) {
                 createDir(originDirName)
                 var newName = originDirName + "/" + oldName + "_new" + ".pdf"
                 addFile(newName, filePath)
-                console.log("Wpisalem " + newName + " do overwrite")
             }
         })
     } catch (e) {
         if (e.code === 'ENOENT') {
-            console.log("Zapisuje nie istniejący wczesniej plik: " + path.basename(filePath))
+            console.log("Zapisuje plik: " + path.basename(filePath) + " do " + pathInLib)
             fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
         } else {
             throw e
         }
     }
+    return pathInLib
 }
 
 var scanClick = document.getElementById("scan")
