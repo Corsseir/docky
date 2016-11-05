@@ -124,6 +124,7 @@ function fillLib (pdfArray, callback) {
             x = appendToArray(libPathArray, r)
             console.log(x)
             if (pdfArray.length === x) {
+                //Czekaj na dodanie wszystkich plików
                 console.log("skoczyelm fill lib")
                 console.log("xwynosił: " + x)
                 var result = libPathArray
