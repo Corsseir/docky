@@ -6,6 +6,7 @@
 //node
 const fs = require ('fs')
 let path = require('path')
+let crypto = require('crypto')
 let streamEqual = require('stream-equal')
 const Database = require('./database.js').Database
 const DatabaseOperation = require('./database.js').DatabaseOperation
@@ -32,8 +33,6 @@ class IO {
 
         return pdfs
     }
-
-    // addToLibAndDb(pdfs, function () {console.log("Dodalem")})
 
     //Dodaje dowolną liczbę plików do lib i db, input to tablica
 
@@ -79,27 +78,40 @@ class IO {
         }
     }
 
+// Utwórz sumę kontrolną MD5 dla podanego pliku.
+
+    static createChecksum (fpath, callback) {
+        console.log ('Tworze checksum')
+        var checksum = crypto.createHash('md5')
+        var rs = fs.createReadStream(fpath)
+        fs.readFile(fpath, function hashFile(err, data) {
+            checksum.update(data, 'utf8')
+            callback && callback(checksum.digest('hex'))
+        })
+    }
+
     //Funkcje pomocnicze - nie używać :)
-
-
     //funkcja pomocnicza dla addAlltoDb
 
     static addEntryToDb(fileName, fileLocalPath, fileSysPath) {
-        DatabaseOperation.File.CreateFile(null, fileName, function addFileId() {
-            var fileId = this.lastID
-            console.log("Jestem w create file " + fileId)
-            DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
-                var locationId = this.lastID
-                console.log("Jestem w create location " + locationId + " test file: " + fileId)
-                DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {
-                    console.log("Skonczylem dodawać lokalną")
+        this.createChecksum (fileLocalPath, function getChecksum (checksum) {
+            console.log("Hash: " + checksum + " dla: " + fileLocalPath)
+            DatabaseOperation.File.CreateFile(null, fileName, checksum, function addFileId() {
+                var fileId = this.lastID
+                console.log("Jestem w create file " + fileId)
+                DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
+                    var locationId = this.lastID
+                    console.log("Jestem w create location " + locationId + " test file: " + fileId)
+                    DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {
+                        console.log("Skonczylem dodawać lokalną")
+                    })
                 })
-            })
-            DatabaseOperation.Location.CreateLocation("global", fileSysPath, function addLocationId() {
-                var locationId2 = this.lastID
-                console.log("Jestem w create location " + locationId2 + " test file: " + fileId)
-                DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId2, function () {
-                    console.log("Skonczylem dodawać globalną")
+                DatabaseOperation.Location.CreateLocation("global", fileSysPath, function addLocationId() {
+                    var locationId2 = this.lastID
+                    console.log("Jestem w create location " + locationId2 + " test file: " + fileId)
+                    DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId2, function () {
+                        console.log("Skonczylem dodawać globalną")
+                    })
                 })
             })
         })
@@ -140,7 +152,7 @@ class IO {
         }
         //Przejdź rekurencyjnie po wszystkich podfolderach.
         for (var i = 0; i < dirsArray.length; i++) {
-            listPDFs(dirsArray[i], dirsArray, filesArray)
+            this.listPDFs(dirsArray[i], dirsArray, filesArray)
         }
     }
 
@@ -167,7 +179,7 @@ class IO {
                             }
                             var newNumber = (max + 1).toString()
                             var newName = "__" + newNumber
-                            var newPath = ovPath + "/" + baseN + newName
+                            var newPath = ovPath + "/" + baseN + newName + ".pdf"
                             fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
                             result.filesys = filePath
                             result.local = newPath
@@ -193,70 +205,8 @@ class IO {
             result.type = "unique"
             callback && callback(result)
         }
-        /*
-         fs.access(pathInLib, fs.constants.R_OK, function waitForCheck (err) {
-         var result = new Object()
-         if (err === null) {
-         console.log(pathInLib + " już jest")
-         var baseN = path.basename(filePath, ".pdf").toString()
-         var ovPath = overwritePath + "/" + baseN
-         fs.mkdir(ovPath, function handleCreated(err){
-         if (err === null) {
-         var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
-         fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
-         result.filesys = filePath
-         result.local = newPath
-         result.type = "overwrite"
-         callback && callback(result)
-         } else if (error.code === "EEXIST") {
-         fs.readdir(ovPath, function getFolders (err, files) {
-         console.log("Katalog w override juz jest")
-         var x = 0
-         var max = 0
-         for (var i = 0; i < files.length; i++) {
-         var oldNumber = (parseInt(files[i].split("__").pop()))
-         if (max < oldNumber) {
-         max = oldNumber
-         }
-         }
-         var newNumber = (max + 1).toString()
-         var newName = "__" + newNumber
-         var newPath = ovPath +  + "/" + baseN + "__" + newNumber
-         fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
-         result.filesys = filePath
-         result.local = newPath
-         result.type = "overwrite"
-         callback && callback(result)
-         })
-         }
-         })
-         } else if (err.code === "ENOENT") {
-         console.log(pathInLib + " nie ma")
-         fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
-         result.filesys = filePath
-         result.local = pathInLib
-         result.type = "unique"
-         callback && callback(result)
-         } else {
-         throw err
-         }
-         })
-         */
-    }
-
-    //testowa
-
-    check_test() {
-        var file1 = fs.createReadStream(dialog.showOpenDialog({properties: ['openFile']}).toString())
-        var file2 = fs.createReadStream(dialog.showOpenDialog({properties: ['openFile']}).toString())
-        streamEqual(file1, file2, function (err, equal) {
-            if (!equal) {
-                console.log("rozne")
-            } else {
-                console.log("takie same")
-            }
-        })
     }
 }
+
 
 exports.IO = IO
