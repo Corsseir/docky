@@ -4,8 +4,9 @@ const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
 // Database Imports
-const Database = require('./Database.js').Database
-const DatabaseOperation = require('./Database.js').DatabaseOperation
+const Database = require('./libs/database.js').Database
+const DatabaseOperation = require('./libs/database.js').DatabaseOperation
+const IO = require('./libs/io.js').IO
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 
@@ -32,10 +33,15 @@ function createWindow () {
   DatabaseOperation.CreateTables()
 }
 
+function createFolders () {
+  IO.createLocalLib()
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
+app.on('ready', createFolders)
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {

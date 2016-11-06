@@ -2,6 +2,8 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
+const scan = require('electron').remote.require('./components/scanPDF.js').Scan
+
 function Start () {
     var init = function (event) {
         new Import().getTemplate('#link-section-default', '#section-default', '#side-right');
@@ -22,7 +24,7 @@ function Folder () {
             if(typeof(folderList) !== 'undefined') {
                 folderList.show();
             }
-        } else if(folderIcon.hasClass('fjs addeventlistenera-folder-open')) {
+        } else if(folderIcon.hasClass('fa-folder-open')) {
             folderIcon.removeClass('fa-folder-open');
             folderIcon.addClass('fa-folder');
 
@@ -50,7 +52,21 @@ function File () {
     init();
 }
 
+function Scan () {
+    var handleClick = function (event) {
+        var response = scan.proceed()
+
+        console.log(response.status)
+    }
+
+    var init = function () {
+        $(document).on('click', '#scan', handleClick)
+    }
+    init()
+}
+
 new Start();
 new Folder();
 new File();
+new Scan();
 
