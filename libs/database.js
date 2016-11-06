@@ -11,13 +11,13 @@ class DatabaseOperation
         Database.serialize(function ()
         {
             Database.run('create table if not exists Tag(ID_Tag INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Value TEXT)', ErrorCallback)
-            Database.run('create table if not exists BLOB(ID_BLOB INTEGER PRIMARY KEY AUTOINCREMENT, BLOB BLOB, Checksum TEXT)', ErrorCallback)
+            Database.run('create table if not exists BLOB(ID_BLOB INTEGER PRIMARY KEY AUTOINCREMENT, BLOB BLOB)', ErrorCallback)
             Database.run('create table if not exists Location(ID_Location INTEGER PRIMARY KEY AUTOINCREMENT, Type TEXT, Location TEXT)', ErrorCallback)
-            Database.run('create table if not exists File(ID_File INTEGER PRIMARY KEY AUTOINCREMENT, Filename TEXT, ID_BLOB INTEGER, FOREIGN KEY(ID_BLOB) REFERENCES BLOB(ID_BLOB))', ErrorCallback)
-            Database.run('create table if not exists Collection(ID_Collection INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, ID_ParentCollection INTEGER, FOREIGN KEY(ID_ParentCollection) REFERENCES Collection(ID_Collection))', ErrorCallback)
-            Database.run('create table if not exists File_Collection(ID_File INTEGER NOT NULL, ID_Collection INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File), FOREIGN KEY(ID_Collection) REFERENCES Collection(ID_Collection), PRIMARY KEY(ID_File, ID_Collection))', ErrorCallback)
-            Database.run('create table if not exists File_Location(ID_File INTEGER NOT NULL, ID_Location INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File), FOREIGN KEY(ID_Location) REFERENCES Location(ID_Location), PRIMARY KEY(ID_File, ID_Location))', ErrorCallback)
-            Database.run('create table if not exists File_Tag(ID_File INTEGER NOT NULL, ID_Tag INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File), FOREIGN KEY(ID_Tag) REFERENCES Tag(ID_Tag), PRIMARY KEY(ID_File, ID_Tag))', ErrorCallback)
+            Database.run('create table if not exists File(ID_File INTEGER PRIMARY KEY AUTOINCREMENT, Filename TEXT, ID_BLOB INTEGER, Checksum TEXT, FOREIGN KEY(ID_BLOB) REFERENCES BLOB(ID_BLOB) ON DELETE CASCADE)', ErrorCallback)
+            Database.run('create table if not exists Collection(ID_Collection INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, ID_ParentCollection INTEGER, FOREIGN KEY(ID_ParentCollection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE)', ErrorCallback)
+            Database.run('create table if not exists File_Collection(ID_File INTEGER NOT NULL, ID_Collection INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Collection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Collection))', ErrorCallback)
+            Database.run('create table if not exists File_Location(ID_File INTEGER NOT NULL, ID_Location INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Location) REFERENCES Location(ID_Location) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Location))', ErrorCallback)
+            Database.run('create table if not exists File_Tag(ID_File INTEGER NOT NULL, ID_Tag INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Tag) REFERENCES Tag(ID_Tag) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Tag))', ErrorCallback)
         })
     }
 
@@ -145,9 +145,9 @@ DatabaseOperation.BLOB = class BLOB
 {
     // The signature of the callback is function(err) {}
     // If execution was successful, the this object will contain property named lastID
-    static CreateBLOB(BLOB, Checksum, Callback)
+    static CreateBLOB(BLOB, Callback)
     {
-        Database.run('INSERT INTO BLOB (BLOB, Checksum) VALUES ($BLOB, $Checksum)', {$BLOB: BLOB, $Checksum: Checksum}, Callback)
+        Database.run('INSERT INTO BLOB (BLOB) VALUES ($BLOB)', {$BLOB: BLOB}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
@@ -162,9 +162,9 @@ DatabaseOperation.BLOB = class BLOB
         Database.all('SELECT * FROM BLOB', Callback)
     }
 
-    static UpdateBLOB(Id, BLOB, Checksum)
+    static UpdateBLOB(Id, BLOB)
     {
-        Database.run('UPDATE BLOB SET BLOB = $BLOB, Checksum = $Checksum WHERE ID_BLOB = $ID', {$BLOB: BLOB, $Checksum: Checksum, $ID: Id}, ErrorCallback)
+        Database.run('UPDATE BLOB SET BLOB = $BLOB WHERE ID_BLOB = $ID', {$BLOB: BLOB, $ID: Id}, ErrorCallback)
     }
 
     static DeleteBLOB(Id)
@@ -177,9 +177,9 @@ DatabaseOperation.File = class File
 {
     // The signature of the callback is function(err) {}
     // If execution was successful, the this object will contain property named lastID
-    static CreateFile(ID_BLOB, Filename, Callback)
+    static CreateFile(ID_BLOB, Filename, Checksum, Callback)
     {
-        Database.run('INSERT INTO File (ID_BLOB, Filename) VALUES ($ID_BLOB, $Filename)', {$ID_BLOB: ID_BLOB, $Filename: Filename}, Callback)
+        Database.run('INSERT INTO File (ID_BLOB, Filename, Checksum) VALUES ($ID_BLOB, $Filename, $Checksum)', {$ID_BLOB: ID_BLOB, $Filename: Filename, $Checksum: Checksum}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
@@ -194,9 +194,9 @@ DatabaseOperation.File = class File
         Database.all('SELECT * FROM File', Callback)
     }
 
-    static UpdateFile(Id, ID_BLOB, Filename)
+    static UpdateFile(Id, ID_BLOB, Filename, Checksum)
     {
-        Database.run('UPDATE File SET ID_BLOB = $ID_BLOB, Filename = $Filename WHERE ID_File = $ID', {$ID_BLOB: ID_BLOB, $Filename: Filename, $ID: Id}, ErrorCallback)
+        Database.run('UPDATE File SET ID_BLOB = $ID_BLOB, Filename = $Filename, Checksum = $Checksum WHERE ID_File = $ID', {$ID_BLOB: ID_BLOB, $Filename: Filename, $Checksum: Checksum, $ID: Id}, ErrorCallback)
     }
 
     static DeleteFile(Id)
