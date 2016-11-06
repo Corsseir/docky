@@ -13,11 +13,11 @@ class DatabaseOperation
             Database.run('create table if not exists Tag(ID_Tag INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Value TEXT)', ErrorCallback)
             Database.run('create table if not exists BLOB(ID_BLOB INTEGER PRIMARY KEY AUTOINCREMENT, BLOB BLOB)', ErrorCallback)
             Database.run('create table if not exists Location(ID_Location INTEGER PRIMARY KEY AUTOINCREMENT, Type TEXT, Location TEXT)', ErrorCallback)
-            Database.run('create table if not exists File(ID_File INTEGER PRIMARY KEY AUTOINCREMENT, Filename TEXT, ID_BLOB INTEGER, Checksum TEXT, FOREIGN KEY(ID_BLOB) REFERENCES BLOB(ID_BLOB))', ErrorCallback)
-            Database.run('create table if not exists Collection(ID_Collection INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, ID_ParentCollection INTEGER, FOREIGN KEY(ID_ParentCollection) REFERENCES Collection(ID_Collection))', ErrorCallback)
-            Database.run('create table if not exists File_Collection(ID_File INTEGER NOT NULL, ID_Collection INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File), FOREIGN KEY(ID_Collection) REFERENCES Collection(ID_Collection), PRIMARY KEY(ID_File, ID_Collection))', ErrorCallback)
-            Database.run('create table if not exists File_Location(ID_File INTEGER NOT NULL, ID_Location INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File), FOREIGN KEY(ID_Location) REFERENCES Location(ID_Location), PRIMARY KEY(ID_File, ID_Location))', ErrorCallback)
-            Database.run('create table if not exists File_Tag(ID_File INTEGER NOT NULL, ID_Tag INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File), FOREIGN KEY(ID_Tag) REFERENCES Tag(ID_Tag), PRIMARY KEY(ID_File, ID_Tag))', ErrorCallback)
+            Database.run('create table if not exists File(ID_File INTEGER PRIMARY KEY AUTOINCREMENT, Filename TEXT, ID_BLOB INTEGER, Checksum TEXT, FOREIGN KEY(ID_BLOB) REFERENCES BLOB(ID_BLOB) ON DELETE CASCADE)', ErrorCallback)
+            Database.run('create table if not exists Collection(ID_Collection INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, ID_ParentCollection INTEGER, FOREIGN KEY(ID_ParentCollection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE)', ErrorCallback)
+            Database.run('create table if not exists File_Collection(ID_File INTEGER NOT NULL, ID_Collection INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Collection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Collection))', ErrorCallback)
+            Database.run('create table if not exists File_Location(ID_File INTEGER NOT NULL, ID_Location INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Location) REFERENCES Location(ID_Location) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Location))', ErrorCallback)
+            Database.run('create table if not exists File_Tag(ID_File INTEGER NOT NULL, ID_Tag INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Tag) REFERENCES Tag(ID_Tag) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Tag))', ErrorCallback)
         })
     }
 
