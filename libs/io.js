@@ -9,9 +9,6 @@ const {dialog} = require('electron').remote
 const fs = require ('fs')
 let path = require("path")
 let streamEqual = require('stream-equal')
-//pliki wlasne
-const Database = require('./Database.js').Database
-const DatabaseOperation = require('./Database.js').DatabaseOperation
 //sciezki
 const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
@@ -22,16 +19,17 @@ function createLocalLib () {
     createDir(libraryMain)
     createDir(libraryPath)
     createDir(overwritePath)
-    var pdfs = scan()
-    addToLibAndDb(pdfs, function () {console.log("Dodalem")})
 }
 
 //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
 function scan () {
     var rootPath = dialog.showOpenDialog({properties:['openDirectory']})
     var pdfs = scanDirs(rootPath)
+
     return pdfs
 }
+
+// addToLibAndDb(pdfs, function () {console.log("Dodalem")})
 
 //Dodaje dowolną liczbę plików do lib i db, input to tablica
 function addToLibAndDb(pdfs, callback) {
