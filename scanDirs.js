@@ -17,17 +17,66 @@ const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
 
+//funkcja przeznaczona do pierwszego uruchomienia
 function createLocalLib () {
     createDir(libraryMain)
     createDir(libraryPath)
     createDir(overwritePath)
     var pdfs = scan()
-    var libPdfs = []
-    fillLib(pdfs, function (r) {
-        addAllToDb (r)
+    addToLibAndDb(pdfs, function () {console.log("Dodalem")})
+}
+
+//funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
+function scan () {
+    var rootPath = dialog.showOpenDialog({properties:['openDirectory']})
+    var pdfs = scanDirs(rootPath)
+    return pdfs
+}
+
+//Dodaje dowolną liczbę plików do lib i db, input to tablica
+function addToLibAndDb(pdfs, callback) {
+    pdfs.forEach(function(element) {
+        console.log(element)
+        var fName = path.basename(element).toString()
+        var pathInLib = libraryPath + "/" + fName
+        var filePath = element
+        addF(pathInLib, element, function (result) {
+            addToDb(result)
+        })
     })
 }
 
+
+//Dodaje plik do bazy, pomocnicza dla addToLibAndDb
+function addToDb (element) {
+    console.log("Jestem w add to DB")
+    var fileLocalPath = element.local
+    var fileSysPath = element.filesys
+    var fileName = path.basename(element.filesys).toString()
+    addEntryToDb(fileName, fileLocalPath, fileSysPath)
+}
+
+//Utwórz katalog w wybranej ścieżce (synchroniczna)
+function createDir (path) {
+    try {
+        var stats = fs.lstatSync(path)
+        console.log("Katalog już istnieje")
+    }
+    catch (e) {
+        if (e.code === 'ENOENT'){
+            fs.mkdirSync(path)
+            console.log("Stworzono katalog")
+        }
+        else {
+            throw e
+        }
+    }
+}
+
+//Funkcje pomocnicze - nie używać :)
+
+
+//funkcja pomocnicza dla addAlltoDb
 function addEntryToDb (fileName, fileLocalPath, fileSysPath) {
     DatabaseOperation.File.CreateFile(null, fileName, function addFileId (){
         var fileId = this.lastID
@@ -45,32 +94,16 @@ function addEntryToDb (fileName, fileLocalPath, fileSysPath) {
     })
 }
 
-function addAllToDb (libPDFs) {
-    console.log("Jestem w add to DB")
-    libPDFs.forEach(function (element) {
-        var fileLocalPath = element.local
-        var fileSysPath = element.filesys
-        var fileName = path.basename(element.filesys).toString()
-        var origin = element.original
-        addEntryToDb(fileName, fileLocalPath, fileSysPath, origin)
-    })
-}
-
-function scan () {
-    var rootPath = dialog.showOpenDialog({properties:['openDirectory']})
-    var pdfs = scanDirs(rootPath)
-    return pdfs
-}
-
+//funkcja pomocnicza dla scan
 function scanDirs (rootPath) {
     var dirs = []
     var pdfs = []
     dirs.push(rootPath.toString())
     listPDFs(dirs[0], dirs, pdfs)
-    //pdfs.forEach(function(element) {console.log("Ścieżka do pdfa: " + element)})
     return pdfs
 }
 
+//funkcja pomocnicza dla scan -> scanDirs
 function listPDFs (dirpath, dirsArray, filesArray) {
     console.log("Przeszukuję katalog " + dirpath)
     var items = fs.readdirSync(dirpath)
@@ -97,85 +130,117 @@ function listPDFs (dirpath, dirsArray, filesArray) {
     }
 }
 
-function createDir (path) {
-    try {
-        var stats = fs.lstatSync(path)
-        console.log("Katalog już istnieje")
-    }
-    catch (e) {
-        if (e.code === 'ENOENT'){
-            fs.mkdirSync(path)
-            console.log("Stworzono katalog")
-        }
-        else {
-            throw e
-        }
-    }
-}
-
-function fillLib (pdfArray, callback) {
-    var libPathArray = []
-    var x = 0
-    pdfArray.forEach(function (element) {
-        var fName = path.basename(element).toString()
-        var pathInLib = libraryPath + "/" + fName
-        var filePath = element
-        addFile(pathInLib, filePath, function (r){
-            x = appendToArray(libPathArray, r)
-            console.log(x)
-            if (pdfArray.length === x) {
-                //Czekaj na dodanie wszystkich plików
-                console.log("skoczyelm fill lib")
-                console.log("xwynosił: " + x)
-                var result = libPathArray
+//Dodaj plik do biblioteki, pomocnicza
+function addF (pathInLib, filePath, callback) {
+    var result = new Object()
+    if (fs.existsSync(pathInLib)) {
+        console.log(pathInLib + " już jest")
+        var baseN = path.basename(filePath, ".pdf").toString()
+        var ovPath = overwritePath + "/" + baseN
+        fs.mkdir(ovPath, function handleCreated(err){
+            if (err) {
+                if (err.code === "EEXIST") {
+                    fs.readdir(ovPath, function getFolders(err, files) {
+                        console.log("Katalog w override juz jest")
+                        var x = 0
+                        var max = 0
+                        for (var i = 0; i < files.length; i++) {
+                            var oldNumber = (parseInt(files[i].split("__").pop()))
+                            if (max < oldNumber) {
+                                max = oldNumber
+                            }
+                        }
+                        var newNumber = (max + 1).toString()
+                        var newName = "__" + newNumber
+                        var newPath = ovPath +"/" + baseN + newName
+                        fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
+                        result.filesys = filePath
+                        result.local = newPath
+                        result.type = "overwrite"
+                        callback && callback(result)
+                    })
+                }
+            } else {
+                var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
+                fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
+                result.filesys = filePath
+                result.local = newPath
+                result.type = "overwrite"
                 callback && callback(result)
             }
         })
+    } else {
+        console.log(pathInLib + " nie ma")
+        fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
+        result.filesys = filePath
+        result.local = pathInLib
+        result.type = "unique"
+        callback && callback(result)
+    }
+    /*
+    fs.access(pathInLib, fs.constants.R_OK, function waitForCheck (err) {
+        var result = new Object()
+        if (err === null) {
+            console.log(pathInLib + " już jest")
+            var baseN = path.basename(filePath, ".pdf").toString()
+            var ovPath = overwritePath + "/" + baseN
+            fs.mkdir(ovPath, function handleCreated(err){
+                if (err === null) {
+                    var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
+                    fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
+                    result.filesys = filePath
+                    result.local = newPath
+                    result.type = "overwrite"
+                    callback && callback(result)
+                } else if (error.code === "EEXIST") {
+                    fs.readdir(ovPath, function getFolders (err, files) {
+                        console.log("Katalog w override juz jest")
+                        var x = 0
+                        var max = 0
+                        for (var i = 0; i < files.length; i++) {
+                            var oldNumber = (parseInt(files[i].split("__").pop()))
+                            if (max < oldNumber) {
+                                max = oldNumber
+                            }
+                        }
+                        var newNumber = (max + 1).toString()
+                        var newName = "__" + newNumber
+                        var newPath = ovPath +  + "/" + baseN + "__" + newNumber
+                        fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
+                        result.filesys = filePath
+                        result.local = newPath
+                        result.type = "overwrite"
+                        callback && callback(result)
+                    })
+                }
+            })
+        } else if (err.code === "ENOENT") {
+            console.log(pathInLib + " nie ma")
+            fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
+            result.filesys = filePath
+            result.local = pathInLib
+            result.type = "unique"
+            callback && callback(result)
+        } else {
+            throw err
+        }
+    })
+    */
+}
+
+//testowa
+function check_test(){
+    var file1 = fs.createReadStream(dialog.showOpenDialog({properties:['openFile']}).toString())
+    var file2 = fs.createReadStream(dialog.showOpenDialog({properties:['openFile']}).toString())
+    streamEqual(file1, file2, function (err, equal) {
+        if (!equal) {
+            console.log("rozne")
+        } else {
+            console.log("takie same")
+        }
     })
 }
 
-function appendToArray(array, entry) {
-    console.log("appendToArray")
-    array.push(entry)
-    //array.forEach(function(element) {console.log("Ścieżka do pdfa test: " + element)})
-    console.log("Dopisałem: " + entry.local)
-    return array.length
-}
-
-function addFile (pathInLib, filePath, callback) {
-   try {
-        fs.accessSync(pathInLib, fs.F_OK)
-        console.log("plik: " + pathInLib + " już istnieje")
-        var file1 = fs.createReadStream(pathInLib.toString())
-        var file2 = fs.createReadStream(filePath.toString())
-        streamEqual(file1, file2, function (err, equal) {
-            //zapisz plik do folderu overwrite
-            if (!equal) {
-                var oldName = path.basename(pathInLib, '.pdf').toString()
-                //Kazdy powtarzający sie plik bedzie znajdowac sie w katalaogu, ktory nazywa sie jak ten plik
-                var originDirName = overwritePath + "/" + path.basename(filePath, ".pdf").toString()
-                createDir(originDirName)
-                var newName = originDirName + "/" + oldName + "_new" + ".pdf"
-                addFile(newName, filePath, callback)
-            }
-        })
-    } catch (e) {
-        if (e.code === 'ENOENT') {
-            console.log("Zapisuje plik: " + path.basename(filePath) + " do " + pathInLib)
-            fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
-            console.log("Zwracam lokalizację lokalną: " + pathInLib)
-            //localLocations.push(pathInLib)
-            var r = new Object()
-            r.filesys = filePath
-            r.local = pathInLib
-            r.original = path.basename(filePath).toString()
-            console.log("addFile")
-            callback && callback(r)
-        } else {
-            throw e
-        }
-    }
-}
-
+//check_test()
 var scanClick = document.getElementById("scan")
 var test = scanClick.addEventListener('click', createLocalLib)
