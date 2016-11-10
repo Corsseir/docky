@@ -107,11 +107,11 @@ class IO {
             }
         }
     }
-
 // Utwórz sumę kontrolną MD5 dla podanego pliku.
 
     static createChecksum (fpath, callback) {
         console.log ('Tworze checksum')
+        fpath = fpath.toString()
         var checksum = crypto.createHash('md5')
         var rs = fs.createReadStream(fpath)
         fs.readFile(fpath, function hashFile(err, data) {
@@ -124,9 +124,7 @@ class IO {
     //funkcja pomocnicza dla addAlltoDb
 
     static addEntryToDb(fileName, fileLocalPath, fileSysPath, collectionId, callback) {
-        this.createChecksum (fileLocalPath, function getChecksum (checksum) {
-            console.log("Hash: " + checksum + " dla: " + fileLocalPath)
-            DatabaseOperation.File.CreateFile(null, fileName, checksum, function addFileId() {
+            DatabaseOperation.File.CreateFile(null, fileName, null, function addFileId() {
                 var fileId = this.lastID
                 console.log("Jestem w create file " + fileId)
                 DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
@@ -147,7 +145,7 @@ class IO {
                 DatabaseOperation.File_Collection.CreateFile_Collection(fileId, collectionId)
                 callback()
             })
-        })
+
     }
 
     //funkcja pomocnicza dla scan
