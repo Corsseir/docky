@@ -3,12 +3,12 @@
  */
 
 function Import () {
-    var getTemplate = function (linkId, sectionId) {
+    var getTemplate = function (linkId, sectionId, targetId) {
         var link = document.querySelector(linkId);
         var template = link.import.querySelector(sectionId);
         var clone = document.importNode(template.content, true);
 
-        return $(clone)
+        document.querySelector(targetId).appendChild(clone);
     }
 
     return {

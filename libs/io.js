@@ -10,7 +10,6 @@ let crypto = require('crypto')
 let streamEqual = require('stream-equal')
 const Database = require('./database.js').Database
 const DatabaseOperation = require('./database.js').DatabaseOperation
-const CollectionHelper = require('../helpers/collection.js').CollectionHelper
 const dialog = require('electron').dialog
 //sciezki
 const libraryMain = "./DockyLibrary"
@@ -37,57 +36,28 @@ class IO {
 
     //Dodaje dowolną liczbę plików do lib i db, input to tablica
 
-    static addToLibAndDb(pdfs, collectionId, filename, callback) {
+    static addToLibAndDb(pdfs, callback) {
         var self = this;
-        var i;
-
-        for (i = 0; i < pdfs.length; i++) {
+        for (var i = 0; i < pdfs.length; i++) {
             var element = pdfs[i]
             console.log(element)
-            console.log(collectionId)
             var fName = path.basename(element).toString()
             var pathInLib = libraryPath + "/" + fName
-            self.addF(pathInLib, element, function (result) {
-                self.addToDb(result, collectionId, filename, function () {
-                    if(i === pdfs.length && typeof filename !== 'undefined') {
-                        callback()
-                    }
-                })
+            this.addF(pathInLib, element, function (result) {
+                self.addToDb(result)
             })
         }
     }
 
-    static addToLibAndDbFromScan(pdfs, callback) {
-        var self = this;
-
-        DatabaseOperation.Collection.GetAllCollections(function (err, rows) {
-            var rootCollection = CollectionHelper.getRootCollection(rows)
-
-            DatabaseOperation.Collection.CreateCollection("Zeskanowane", rootCollection.ID_Collection, function () {
-                var collectionId = this.lastID
-
-                self.addToLibAndDb(pdfs, collectionId)
-            })
-        })
-    }
 
     //Dodaje plik do bazy, pomocnicza dla addToLibAndDb
 
-    static addToDb(element, collectionId, fileName, callback) {
+    static addToDb(element) {
         console.log("Jestem w add to DB")
         var fileLocalPath = element.local
         var fileSysPath = element.filesys
-        console.log(fileName)
-        if(typeof fileName === 'undefined') {
-            fileName = path.basename(element.filesys).toString().split('.')[0]
-        }
-        console.log(fileName)
-        console.log(collectionId)
-
-        this.addEntryToDb(fileName, fileLocalPath, fileSysPath, collectionId, function () {
-            console.log('Dzialam2')
-            callback()
-        })
+        var fileName = path.basename(element.filesys).toString()
+        this.addEntryToDb(fileName, fileLocalPath, fileSysPath)
     }
 
     //Utwórz katalog w wybranej ścieżce (synchroniczna)
@@ -123,7 +93,7 @@ class IO {
     //Funkcje pomocnicze - nie używać :)
     //funkcja pomocnicza dla addAlltoDb
 
-    static addEntryToDb(fileName, fileLocalPath, fileSysPath, collectionId, callback) {
+    static addEntryToDb(fileName, fileLocalPath, fileSysPath) {
         this.createChecksum (fileLocalPath, function getChecksum (checksum) {
             console.log("Hash: " + checksum + " dla: " + fileLocalPath)
             DatabaseOperation.File.CreateFile(null, fileName, checksum, function addFileId() {
@@ -143,9 +113,6 @@ class IO {
                         console.log("Skonczylem dodawać globalną")
                     })
                 })
-                console.log('Dzialam1')
-                DatabaseOperation.File_Collection.CreateFile_Collection(fileId, collectionId)
-                callback()
             })
         })
     }
