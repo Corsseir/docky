@@ -125,6 +125,12 @@ DatabaseOperation.Collection = class Collection
     }
 
     // The signature of the callback is function(err, rows) {}
+    static GetChildrenCollection(Id, Callback)
+    {
+        Database.all('SELECT * FROM Collection WHERE ID_ParentCollection = $ID ORDER BY ID_Collection ASC', {$ID: Id}, Callback)
+    }
+
+    // The signature of the callback is function(err, rows) {}
     static GetAllCollections(Callback)
     {
         Database.all('SELECT * FROM Collection', Callback)
@@ -299,7 +305,7 @@ DatabaseOperation.File_Collection = class File_Collection
         }
         else if(ID_File == null)
         {
-            Database.all('SELECT * FROM File_Collection WHERE ID_Collection = $ID_Collection', {$ID_Collection: ID_Collection}, Callback)
+            Database.all('SELECT * FROM File_Collection WHERE ID_Collection = $ID_Collection ORDER BY ID_File ASC', {$ID_Collection: ID_Collection}, Callback)
         }
         else if(ID_Collection == null)
         {

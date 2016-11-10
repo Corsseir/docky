@@ -1,6 +1,7 @@
 const electron = require('electron')
 // Module to control application life.
 const app = electron.app
+const dialog = electron.dialog
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
 // Database Imports
@@ -29,12 +30,36 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
-  DatabaseOperation.DropTables()
-  DatabaseOperation.CreateTables()
+  // DatabaseOperation.DropTables()
+  // DatabaseOperation.CreateTables()
 }
 
 function createFolders () {
   IO.createLocalLib()
+}
+
+function createRoot() {
+  DatabaseOperation.Collection.GetAllCollections(function (err, rows) {
+    var exist = false;
+    console.log(rows.length)
+    for(var i=0; i < rows.length; i++) {
+      console.log(rows[i].ID_ParentCollection)
+      if(rows[i].ID_ParentCollection === null) {
+        exist = true;
+        break;
+      }
+    }
+
+    if(! exist) {
+      DatabaseOperation.Collection.CreateCollection('/', null)
+    }
+  })
+
+
+}
+
+function getFilePath() {
+  return dialog.showOpenDialog({properties: ['openFile']})
 }
 
 // This method will be called when Electron has finished
@@ -42,6 +67,7 @@ function createFolders () {
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
 app.on('ready', createFolders)
+app.on('ready', createRoot)
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
@@ -62,3 +88,5 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+exports.getFilePath = getFilePath

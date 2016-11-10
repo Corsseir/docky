@@ -70,11 +70,12 @@ body {
 }
 
 .folder-list-main {
+    display: block;
     background-color: #424242;
     width: calc(100% - 6px);
     height: calc(100% - 71px);
     padding: 10px 0px 0px 6px!important;
-    overflow: auto;
+    overflow-x: auto;
 }
 
 .folder-list {
@@ -90,6 +91,7 @@ body {
     border-radius: 2px;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
+    white-space: nowrap;
 }
 
 .folder-list li span:hover {
