@@ -7,7 +7,7 @@ const IO = require('../libs/io.js').IO
 class Scan {
     static proceed() {
         var pdfs = IO.scan()
-        IO.addToLibAndDb(pdfs, function () {
+        IO.addToLibAndDbFromScan(pdfs, function () {
             console.log("Dodalem")
         })
 
