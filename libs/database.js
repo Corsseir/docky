@@ -211,12 +211,6 @@ DatabaseOperation.Collection = class Collection
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetChildrenCollection(Id, Callback)
-    {
-        Database.all('SELECT * FROM Collection WHERE ID_ParentCollection = $ID ORDER BY ID_Collection ASC', {$ID: Id}, Callback)
-    }
-
-    // The signature of the callback is function(err, rows) {}
     static GetAllCollections(Name, ID_ParentCollection, OrderBy, OrderDirection, Callback)
     {
         if(Name == null && ID_ParentCollection == null)

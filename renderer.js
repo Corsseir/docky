@@ -60,7 +60,7 @@ function Tree() {
 
         var ul = li.find('ul').first()
 
-        DatabaseOperation.Collection.GetChildrenCollection(root.ID_Collection, function (err, collections) {
+        DatabaseOperation.Collection.GetAllCollection(null, root.ID_Collection, 'ID_Collection', 'ASC', function (err, collections) {
             for (var i = 0; i < collections.length; i++) {
                 console.log(collections[i])
                 DatabaseOperation.Collection.GetCollection(collections[i].ID_Collection, function (err, row) {
