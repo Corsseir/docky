@@ -61,9 +61,52 @@ DatabaseOperation.Tag = class Tag
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllTags(Callback)
+    static GetAllTags(Name, Value, OrderBy, OrderDirection, Callback)
     {
-        Database.all('SELECT * FROM Tag', Callback)
+        if(Name == null && Value == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Tag', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Tag ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
+        }
+        else if(Name == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Tag WHERE Value = $Value', {$Value: Value}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Tag WHERE Value = $Value ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Value: Value}, Callback)
+            }
+        }
+        else if(Value == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Tag WHERE Name = $Name', {$Name: Name}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Tag WHERE N-ame = $Name ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Name: Name}, Callback)
+            }
+        }
+        else
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Tag WHERE Name = $Name and Value = $Value', {$Name: Name, $Value: Value}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Tag WHERE Name = $Name and Value = $Value ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Name: Name, $Value: Value}, Callback)
+            }
+        }
     }
 
     static UpdateTag(Id, Name, Value)
@@ -93,9 +136,52 @@ DatabaseOperation.Location = class Location
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllLocations(Callback)
+    static GetAllLocations(Type, Location, OrderBy, OrderDirection, Callback)
     {
-        Database.all('SELECT * FROM Location', Callback)
+        if(Type == null && Location == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Location', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Location ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
+        }
+        else if(Type == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Location WHERE Location = $Location', {$Location: Location}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Location WHERE Location = $Location ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Location: Location}, Callback)
+            }
+        }
+        else if(Location == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Location WHERE Type = $Type', {$Type: Type}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Location WHERE Type = $Type ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Type: Type}, Callback)
+            }
+        }
+        else
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Location WHERE Location = $Location and Type = $Type', {$Location: Location, $Type: Type}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Location WHERE Location = $Location and Type = $Type ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Location: Location, $Type: Type}, Callback)
+            }
+        }
     }
 
     static UpdateLocation(Id, Type, Location)
@@ -131,9 +217,52 @@ DatabaseOperation.Collection = class Collection
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllCollections(Callback)
+    static GetAllCollections(Name, ID_ParentCollection, OrderBy, OrderDirection, Callback)
     {
-        Database.all('SELECT * FROM Collection', Callback)
+        if(Name == null && ID_ParentCollection == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Collection', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Collection ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
+        }
+        else if(Name == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Collection WHERE ID_ParentCollection = $ID_ParentCollection', {$ID_ParentCollection: ID_ParentCollection}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Collection WHERE ID_ParentCollection = $ID_ParentCollection ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_ParentCollection: ID_ParentCollection}, Callback)
+            }
+        }
+        else if(ID_ParentCollection == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Collection WHERE Name = $Name', {$Name: Name}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Collection WHERE Name = $Name ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Name: Name}, Callback)
+            }
+        }
+        else
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM Collection WHERE ID_ParentCollection = $ID_ParentCollection and Name = $Name', {$ID_ParentCollection: ID_ParentCollection, $Name: Name}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM Collection WHERE ID_ParentCollection = $ID_ParentCollection and Name = $Name ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_ParentCollection: ID_ParentCollection, $Name: Name}, Callback)
+            }
+        }
     }
 
     static UpdateCollection(Id, Name, ID_ParentCollection)
@@ -195,9 +324,30 @@ DatabaseOperation.File = class File
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllFiles(Callback)
+    static GetAllFiles(Filename, OrderBy, OrderDirection, Callback)
     {
-        Database.all('SELECT * FROM File', Callback)
+        if(Filename == null)
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
+        }
+        else
+        {
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File WHERE Filename = $Filename', {$Filename: Filename}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File WHERE Filename = $Filename ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Filename: Filename}, Callback)
+            }
+        }
     }
 
     static UpdateFile(Id, ID_BLOB, Filename, Checksum)
@@ -219,23 +369,51 @@ DatabaseOperation.File_Tag = class File_Tag
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllFile_Tag(ID_File, ID_Tag, Callback)
+    static GetAllFile_Tag(ID_File, ID_Tag, OrderBy, OrderDirection, Callback)
     {
         if(ID_File == null && ID_Tag == null)
         {
-            Database.all('SELECT * FROM File_Tag', Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Tag', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Tag ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
         }
         else if(ID_File == null)
         {
-            Database.all('SELECT * FROM File_Tag WHERE ID_Tag = $ID_Tag', {$ID_Tag: ID_Tag}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Tag WHERE ID_Tag = $ID_Tag', {$ID_Tag: ID_Tag}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Tag WHERE ID_Tag = $ID_Tag ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_Tag: ID_Tag}, Callback)
+            }
         }
         else if(ID_Tag == null)
         {
-            Database.all('SELECT * FROM File_Tag WHERE ID_File = $ID_File', {$ID_File: ID_File}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Tag WHERE ID_File = $ID_File', {$ID_File: ID_File}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Tag WHERE ID_File = $ID_File ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_File: ID_File}, Callback)
+            }
         }
         else
         {
-            Database.all('SELECT * FROM File_Tag WHERE ID_File = $ID_File and ID_Tag = $ID_Tag', {$ID_File: ID_File, $ID_Tag: ID_Tag}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Tag WHERE ID_File = $ID_File and ID_Tag = $ID_Tag', {$ID_File: ID_File, $ID_Tag: ID_Tag}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Tag WHERE ID_File = $ID_File and ID_Tag = $ID_Tag ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_File: ID_File, $ID_Tag: ID_Tag}, Callback)
+            }
         }
     }
 
@@ -258,23 +436,51 @@ DatabaseOperation.File_Location = class File_Location
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllFile_Location(ID_File, ID_Location, Callback)
+    static GetAllFile_Location(ID_File, ID_Location, OrderBy, OrderDirection, Callback)
     {
         if(ID_File == null && ID_Location == null)
         {
-            Database.all('SELECT * FROM File_Location', Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Location', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Location ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
         }
         else if(ID_File == null)
         {
-            Database.all('SELECT * FROM File_Location WHERE ID_Location = $ID_Location', {$ID_Location: ID_Location}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Location WHERE ID_Location = $ID_Location', {$ID_Location: ID_Location}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Location WHERE ID_Location = $ID_Location ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_Location: ID_Location}, Callback)
+            }
         }
         else if(ID_Location == null)
         {
-            Database.all('SELECT * FROM File_Location WHERE ID_File = $ID_File', {$ID_File: ID_File}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Location WHERE ID_File = $ID_File', {$ID_File: ID_File}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Location WHERE ID_File = $ID_File ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_File: ID_File}, Callback)
+            }
         }
         else
         {
-            Database.all('SELECT * FROM File_Location WHERE ID_File = $ID_File and ID_Location = $ID_Location', {$ID_File: ID_File, $ID_Location: ID_Location}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Location WHERE ID_File = $ID_File and ID_Location = $ID_Location', {$ID_File: ID_File, $ID_Location: ID_Location}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Location WHERE ID_File = $ID_File and ID_Location = $ID_Location ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_File: ID_File, $ID_Location: ID_Location}, Callback)
+            }
         }
     }
 
@@ -297,23 +503,51 @@ DatabaseOperation.File_Collection = class File_Collection
     }
 
     // The signature of the callback is function(err, rows) {}
-    static GetAllFile_Collection(ID_File, ID_Collection, Callback)
+    static GetAllFile_Collection(ID_File, ID_Collection, OrderBy, OrderDirection, Callback)
     {
         if(ID_File == null && ID_Collection == null)
         {
-            Database.all('SELECT * FROM File_Collection', Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Collection', Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Collection ORDER BY ' + OrderBy + ' ' + OrderDirection, Callback)
+            }
         }
         else if(ID_File == null)
         {
-            Database.all('SELECT * FROM File_Collection WHERE ID_Collection = $ID_Collection ORDER BY ID_File ASC', {$ID_Collection: ID_Collection}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Collection WHERE ID_Collection = $ID_Collection', {$ID_Collection: ID_Collection}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Collection WHERE ID_Collection = $ID_Collection ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_Collection: ID_Collection}, Callback)
+            }
         }
         else if(ID_Collection == null)
         {
-            Database.all('SELECT * FROM File_Collection WHERE ID_File = $ID_File', {$ID_File: ID_File}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Collection WHERE ID_File = $ID_File', {$ID_File: ID_File}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Collection WHERE ID_File = $ID_File ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_File: ID_File}, Callback)
+            }
         }
         else
         {
-            Database.all('SELECT * FROM File_Collection WHERE ID_File = $ID_File and ID_Collection = $ID_Collection', {$ID_File: ID_File, $ID_Collection: ID_Collection}, Callback)
+            if(OrderBy == null || OrderDirection == null)
+            {
+                Database.all('SELECT * FROM File_Collection WHERE ID_File = $ID_File and ID_Collection = $ID_Collection', {$ID_File: ID_File, $ID_Collection: ID_Collection}, Callback)
+            }
+            else
+            {
+                Database.all('SELECT * FROM File_Collection WHERE ID_File = $ID_File and ID_Collection = $ID_Collection ORDER BY ' + OrderBy + ' ' + OrderDirection, {$ID_File: ID_File, $ID_Collection: ID_Collection}, Callback)
+            }
         }
     }
 
