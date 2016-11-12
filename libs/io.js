@@ -71,7 +71,7 @@ class IO {
     static addToLibAndDbFromScan(pdfs, callback) {
         var self = this;
 
-        DatabaseOperation.Collection.GetAllCollections(function (err, rows) {
+        DatabaseOperation.Collection.GetAllCollections(null, null, null, null, function (err, rows) {
                 var rootCollection = CollectionHelper.getRootCollection(rows)
 
                 DatabaseOperation.Collection.CreateCollection("Zeskanowane", rootCollection.ID_Collection, function () {
@@ -88,13 +88,14 @@ class IO {
         console.log("Jestem w add to DB")
         var fileLocalPath = element.local
         var fileSysPath = element.filesys
+        var checksum = element.checksum
         //console.log("Dodaje do db plik : " + fileName)
         if(typeof fileName === 'undefined') {
             fileName = path.basename(element.filesys).toString().split('.')[0]
         }
         console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
 
-        this.addEntryToDb(fileName, fileLocalPath, fileSysPath, collectionId, function () {
+        this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function () {
             console.log('Dzialam2')
             callback()
         })
@@ -133,8 +134,8 @@ class IO {
     //Funkcje pomocnicze - nie używać :)
     //funkcja pomocnicza dla addAlltoDb
 
-    static addEntryToDb(fileName, fileLocalPath, fileSysPath, collectionId, callback) {
-            DatabaseOperation.File.CreateFile(null, fileName, null, function addFileId() {
+    static addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, callback) {
+            DatabaseOperation.File.CreateFile(null, fileName, checksum, function addFileId() {
                 var fileId = this.lastID
                 console.log("Jestem w create file " + "F_ID: " + fileId + " Sciezka: " + fileLocalPath)
                 DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
@@ -198,58 +199,7 @@ class IO {
     }
 
     //Dodaj plik do biblioteki, pomocnicza
-
-    static addF(pathInLib, filePath, callback) {
-        var result = new Object()
-        if (fs.existsSync(pathInLib)) {
-            console.log(pathInLib + " już jest w bibliotece")
-            var baseN = path.basename(filePath, ".pdf").toString()
-            var ovPath = overwritePath + "/" + baseN
-            fs.mkdir(ovPath, function handleCreated(err) {
-                if (err) {
-                    if (err.code === "EEXIST") {
-                        fs.readdir(ovPath, function getFolders(err, files) {
-                            console.log("Katalog o nazwie" + ovPath + "jest już utworzony w overwrite")
-                            var x = 0
-                            var max = 0
-                            for (var i = 0; i < files.length; i++) {
-                                var oldNumber = (parseInt(files[i].split("__").pop()))
-                                if (max < oldNumber) {
-                                    max = oldNumber
-                                }
-                            }
-                            var newNumber = (max + 1).toString()
-                            var newName = "__" + newNumber
-                            var newPath = ovPath + "/" + baseN + newName + ".pdf"
-                            fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
-                            result.filesys = filePath
-                            result.local = newPath
-                            result.type = "overwrite"
-                            callback && callback(result)
-                        })
-                    }
-                } else {
-                    console.log("Katalog o nazwie" + ovPath + "zostanie utworzony w overwrite")
-                    var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
-                    fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
-                    result.filesys = filePath
-                    result.local = newPath
-                    result.type = "overwrite"
-                    callback && callback(result)
-                }
-            })
-        } else {
-            console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
-            fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
-            console.log(1)
-            result.filesys = filePath
-            result.local = pathInLib
-            result.type = "unique"
-            callback && callback(result)
-        }
-    }
-
-// Uporządkowane addF, ponizej sama funkcja i funkcje jej dotycące
+    // Uporządkowane addF, ponizej sama funkcja i funkcje jej dotycące
     static createResult(resultObj, sysPath, libPath, type, callback) {
         resultObj.filesys = sysPath
         resultObj.local = libPath
@@ -294,26 +244,40 @@ class IO {
             })
         }
     }
+
     static addFile(pathInLib, filePath, callback){
         var result = new Object()
         var self = this
-        if (fs.existsSync(pathInLib)) {
-            console.log(pathInLib + " już jest w bibliotece")
-            var baseN = path.basename(filePath, ".pdf").toString()
-            var ovPath = overwritePath + "/" + baseN
-            fs.mkdir(ovPath, function handleMk(err) {
-                self.addToOverwrite(err, self, result, filePath, ovPath, baseN, callback)
-            })
-        } else {
-            console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
-            fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
-            console.log("Liczba Piotra: " + 1)
-            self.createResult(result, filePath, pathInLib, "unique", function sendResult(resultObj) {
-                callback && callback(resultObj)
-            })
-        }
+        self.createChecksum(filePath, function compareFiles(checksum) {
+            console.log("Stworzyłem checksum: " + checksum)
+            result.checksum = checksum
+            var fileChecksum = checksum
+            if (fs.existsSync(pathInLib)) {
+                console.log(pathInLib + " już jest w bibliotece")
+                var baseN = path.basename(filePath, ".pdf").toString()
+                var ovPath = overwritePath + "/" + baseN
+                DatabaseOperation.File.GetAllFiles(baseN, null, null, function comp (err, rows) {
+                    if (!rows.filter(function(element) { return element.checksum === fileChecksum})) {
+                        console.log("Chekcsum są różne")
+                        fs.mkdir(ovPath, function handleMk(err) {
+                            self.addToOverwrite(err, self, result, filePath, ovPath, baseN, callback)
+                        })
+                    } else {
+                        console.log('Nie trzeba dodawać ' + filePath)
+                    }
+                })
+
+            } else {
+                console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
+                fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
+                console.log("Liczba Piotra: " + 1)
+                self.createResult(result, filePath, pathInLib, "unique", function sendResult(resultObj) {
+                    callback && callback(resultObj)
+                })
+            }
+        })
+
     }
 }
-
 
 exports.IO = IO

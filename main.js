@@ -30,8 +30,9 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
-  // DatabaseOperation.DropTables()
-  // DatabaseOperation.CreateTables()
+
+  //DatabaseOperation.DropTables()
+  //DatabaseOperation.CreateTables()
 }
 
 function createFolders () {
@@ -39,7 +40,7 @@ function createFolders () {
 }
 
 function createRoot() {
-  DatabaseOperation.Collection.GetAllCollections(function (err, rows) {
+  DatabaseOperation.Collection.GetAllCollections(null, null, null, null, function (err, rows) {
     var exist = false;
     console.log(rows.length)
     for(var i=0; i < rows.length; i++) {
@@ -54,8 +55,6 @@ function createRoot() {
       DatabaseOperation.Collection.CreateCollection('/', null)
     }
   })
-
-
 }
 
 function getFilePath() {
@@ -68,7 +67,6 @@ function getFilePath() {
 app.on('ready', createWindow)
 app.on('ready', createFolders)
 app.on('ready', createRoot)
-
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
@@ -85,6 +83,8 @@ app.on('activate', function () {
     createWindow()
   }
 })
+
+
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
