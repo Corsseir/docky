@@ -5,6 +5,8 @@
 //Następnie tworzy katalog na pliki pdf
 //node
 const fs = require ('fs')
+let http = require('http');
+let https = require('https');
 let path = require('path')
 let crypto = require('crypto')
 let streamEqual = require('stream-equal')
@@ -16,14 +18,17 @@ const dialog = require('electron').dialog
 const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
+const Search = require('./search.js').Search
 
 class IO {
     //funkcja przeznaczona do pierwszego uruchomienia
 
     static createLocalLib() {
+        let self = this
         this.createDir(libraryMain)
         this.createDir(libraryPath)
         this.createDir(overwritePath)
+        this.addFileFromURL('http://www.pdf995.com/samples/pdf.pdf')
     }
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
@@ -257,7 +262,7 @@ class IO {
                 var baseN = path.basename(filePath, ".pdf").toString()
                 var ovPath = overwritePath + "/" + baseN
                 DatabaseOperation.File.GetAllFiles(baseN, null, null, function comp (err, rows) {
-                    if (!rows.filter(function(element) { return element.checksum === fileChecksum})) {
+                    if (!rows.filter(function(element) { return element.Checksum === fileChecksum})) {
                         console.log("Chekcsum są różne")
                         fs.mkdir(ovPath, function handleMk(err) {
                             self.addToOverwrite(err, self, result, filePath, ovPath, baseN, callback)
@@ -277,6 +282,37 @@ class IO {
             }
         })
 
+    }
+
+    static addFileFromURL(url) {
+        let self = this
+        this.downloadFile(url, function (fname) {
+            let file = []
+            file.push(fname)
+            self.addToLibAndDbFromScan(file)
+        })
+    }
+
+    static downloadFile(url, callback) {
+        let parts = url.split('/')
+        let parts2 = parts[parts.length - 1].split('.')
+        let fname = parts2[0] + '.pdf'
+
+        let pdf = fs.createWriteStream(fname)
+
+        if (url.substring(0,5) ==='https') {
+            https.get(url, function(response) {
+                response.pipe(pdf)
+            })
+        } else if (url.substring(0,4) ==='http') {
+            http.get(url, function(response) {
+                response.pipe(pdf)
+            })
+        } else {
+            console.log('niepoprawny url')
+        }
+
+        callback&&callback(fname)
     }
 }
 
