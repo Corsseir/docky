@@ -28,7 +28,14 @@ class IO {
         this.createDir(libraryMain)
         this.createDir(libraryPath)
         this.createDir(overwritePath)
-        this.addFileFromURL('http://www.pdf995.com/samples/pdf.pdf')
+        //this.addFileFromURL('http://www.pdf995.com/samples/pdf.pdf')
+        this.isFileInDb('https://dnd.rem.uz/Advanced%20D%26D%20(unsorted)/Requiem%20The%20Grim%20Harvest.pdf', function (answer) {
+            if (answer) {
+                console.log('jest')
+            } else {
+                console.log('nie ma')
+            }
+        })
     }
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
@@ -293,6 +300,26 @@ class IO {
         })
     }
 
+    static isChecksumInArr(element){
+        return (element.Checksum === this)
+    }
+
+    static isFileInDb(url, callback){
+        let self = this
+        DatabaseOperation.File.GetAllFiles(null, null, null, function comp (err, rows){
+            self.downloadFile(url, function (fname){
+                self.createChecksum(fname, function (checksum){
+                    let r = rows.filter(self.isChecksumInArr, checksum)
+                    if (r.length > 1) {
+                        callback && callback(true)
+                    } else {
+                        callback && callback(false)
+                    }
+                })
+            })
+        })
+    }
+
     static downloadFile(url, callback) {
         let parts = url.split('/')
         let parts2 = parts[parts.length - 1].split('.')
@@ -303,16 +330,24 @@ class IO {
         if (url.substring(0,5) ==='https') {
             https.get(url, function(response) {
                 response.pipe(pdf)
+                response.on('end', function() {
+                    console.log('pobrano')
+                    callback && callback(fname)
+                })
             })
         } else if (url.substring(0,4) ==='http') {
             http.get(url, function(response) {
                 response.pipe(pdf)
+                response.on('end', function() {
+                    console.log('pobrano')
+                    callback && callback(fname)
+                })
             })
         } else {
             console.log('niepoprawny url')
         }
 
-        callback&&callback(fname)
+        //callback&&callback(fname)
     }
 }
 
