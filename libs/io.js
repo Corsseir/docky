@@ -67,15 +67,15 @@ class IO {
             var pathInLib = libraryPath + "/" + fName
             self.addFile(pathInLib, element, function (result) {
                 console.log("Obiekt result: " + result.local + " , " + result.type)
-                self.addToDb(result, collectionId, filename, function () {
-                    if(i === pdfs.length && typeof filename !== 'undefined') {
-                        callback()
+                self.addToDb(result, collectionId, filename, function (fileID) {
+                    if(i === pdfs.length) {
+                        callback(fileID)
                     }
                 })
             })
         }
 
-        if (i === pdfs.length - 1) {
+        if (i === pdfs.length || pdfs.length === 0) {
             console.log("Zakonczono dodawanie")
         }
     }
@@ -83,14 +83,21 @@ class IO {
     static addToLibAndDbFromScan(pdfs, callback) {
         var self = this;
 
-        DatabaseOperation.Collection.GetAllCollections(null, null, null, null, function (err, rows) {
-                var rootCollection = CollectionHelper.getRootCollection(rows)
-
-                DatabaseOperation.Collection.CreateCollection("Zeskanowane", rootCollection.ID_Collection, function () {
+        DatabaseOperation.Collection.GetAllCollections('Zeskanowane', 1, null, null, function (err, rows) {
+            if(rows.length === 0) {
+                DatabaseOperation.Collection.CreateCollection("Zeskanowane", 1, function () {
                     var collectionId = this.lastID
 
-                    self.addToLibAndDb(pdfs, collectionId)
+                    self.addToLibAndDb(pdfs, collectionId, null, function () {
+                        callback()
+                    })
                 })
+            } else if(rows.length === 1) {
+                self.addToLibAndDb(pdfs, rows[0].ID_Collection, null, function () {
+                    console.log('skończyłem')
+                    callback()
+                })
+            }
         })
     }
 
@@ -102,14 +109,14 @@ class IO {
         var fileSysPath = element.filesys
         var checksum = element.checksum
         //console.log("Dodaje do db plik : " + fileName)
-        if(typeof fileName === 'undefined') {
+        if(fileName === null) {
             fileName = path.basename(element.filesys).toString().split('.')[0]
         }
         console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
 
-        this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function () {
+        this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function (fileID) {
             console.log('Dzialam2')
-            callback()
+            callback(fileID)
         })
     }
 
@@ -289,6 +296,131 @@ class IO {
             }
         })
 
+    }
+
+    static editFile(fileID, data) {
+        DatabaseOperation.File.GetFile(fileID, function (err, file) {
+            Database.serialize(function () {
+                DatabaseOperation.File_Location.GetAllFile_Location(fileID, null, null, null, function (err, fileLocations) {
+                    console.log(1111)
+                    fileLocations.forEach(function (fileLocation) {
+                        DatabaseOperation.Location.GetLocation(fileLocation.ID_Location, function (err, location) {
+                            if(location.Type === 'local') {
+                                console.log(location.Location)
+                                console.log(file.Filename)
+                                console.log(data.name)
+                                var newLocation = location.Location.replace(file.Filename, data.name)
+                                fs.rename(location.Location, newLocation)
+                                DatabaseOperation.Location.UpdateLocation(location.ID_Location, location.Type, newLocation)
+                            }
+                        })
+                    })
+                })
+            })
+            Database.serialize(function () {
+                DatabaseOperation.File.UpdateFile(fileID, file.ID_BLOB, data.name, file.Checksum)
+            })
+            Database.serialize(function () {
+                DatabaseOperation.File_Tag.GetAllFile_Tag(fileID, null, null, null, function (err, fileTagByFile) {
+                    console.log('Liczba rekordów File_Tag po fileID: ' + fileTagByFile.length)
+
+                    fileTagByFile.forEach(function (fileTag) {
+                        console.log('fileTag.ID_Tag: ' + fileTag.ID_Tag)
+                        Database.serialize(function () {
+                            DatabaseOperation.File_Tag.GetAllFile_Tag(null, fileTag.ID_Tag, null, null, function (err, fileTagByTag) {
+                                console.log('Liczba rekordów File_Tag po tagID: ' + fileTagByTag.length)
+
+                                if (fileTagByTag.length === 1) {
+                                    DatabaseOperation.Tag.DeleteTag(fileTagByTag[0].ID_Tag)
+                                }
+                            })
+                        })
+                    })
+                })
+            })
+            Database.serialize(function () {
+                if(data.tag !== '') {
+                    var tags = data.tag.split(' ')
+
+                    tags.forEach(function (tag) {
+                        Database.serialize(function () {
+                            DatabaseOperation.Tag.GetAllTags(null, tag, null, null, function (err, rows) {
+                                Database.serialize(function () {
+                                    console.log(tag)
+                                    if (rows.length === 1) {
+                                        DatabaseOperation.File_Tag.CreateFile_Tag(fileID, rows[0].ID_Tag)
+                                    } else if (rows.length === 0) {
+                                        console.log(tag)
+                                        DatabaseOperation.Tag.CreateTag('Tag', tag, function () {
+                                            DatabaseOperation.File_Tag.CreateFile_Tag(fileID, this.lastID)
+                                        })
+                                    }
+                                })
+                            })
+                        })
+                    })
+                }
+            })
+        })
+    }
+
+    static removeFile(fileID, collectionID, mode) {
+        DatabaseOperation.File_Collection.GetAllFile_Collection(fileID, null, null, null, function (err, rows) {
+            var quantity = rows.length
+
+            if(quantity === 1 || mode === 'global') {
+                Database.serialize(function () {
+                    DatabaseOperation.File_Tag.GetAllFile_Tag(fileID, null, null, null, function (err, fileTagByFile) {
+                        fileTagByFile.forEach(function (fileTag) {
+                            console.log('fileTag.ID_Tag: ' + fileTag.ID_Tag)
+                            Database.serialize(function () {
+                                DatabaseOperation.File_Tag.GetAllFile_Tag(null, fileTag.ID_Tag, null, null, function (err, fileTagByTag) {
+
+                                    if (fileTagByTag.length === 1) {
+                                        DatabaseOperation.Tag.DeleteTag(fileTagByTag[0].ID_Tag)
+                                    }
+                                })
+                            })
+                        })
+                    })
+                    DatabaseOperation.File_Location.GetAllFile_Location(fileID, null, null, null, function (err, rows) {
+                        var file_locations = rows;
+
+                        file_locations.forEach(function (file_location) {
+                            Database.serialize(function () {
+                                DatabaseOperation.Location.GetLocation(file_location.ID_Location, function (err, row) {
+                                    var location = row
+
+                                    if (location.Type === 'local') {
+                                        var path = location.Location
+
+                                        fs.exists(path, function (exists) {
+                                            if (exists) {
+                                                fs.unlink(path, function (err) {
+                                                    if (err) {
+                                                        alert("An error ocurred updating the file" + err.message)
+                                                        console.log(err);
+                                                        return
+                                                    }
+                                                    console.log("File succesfully deleted")
+                                                    DatabaseOperation.File.DeleteFile(fileID)
+                                                })
+                                            } else {
+                                                alert("This file doesn't exist, cannot delete")
+                                            }
+                                        });
+                                    }
+                                })
+                                DatabaseOperation.Location.DeleteLocation(file_location.ID_Location)
+                            })
+                        })
+                    })
+
+                })
+            } else {
+                DatabaseOperation.File_Collection.DeleteFile_Collection(fileID, collectionID)
+            }
+        })
     }
 
     static addFileFromURL(url) {
