@@ -9,6 +9,9 @@ const IO = require('../libs/io.js').IO
 class Scan {
     static proceed(event) {
         var rootPath = dialog.showOpenDialog({properties: ['openDirectory']})
+        if (!rootPath){
+            return
+        }
         event.sender.send('scanBegins')
         var pdfs = IO.scan(rootPath)
 

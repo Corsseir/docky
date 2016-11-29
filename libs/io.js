@@ -10,6 +10,8 @@ let https = require('https');
 let path = require('path')
 let crypto = require('crypto')
 let streamEqual = require('stream-equal')
+let archiver = require('archiver')
+const cp = require('child_process');
 const Database = require('./database.js').Database
 const DatabaseOperation = require('./database.js').DatabaseOperation
 const CollectionHelper = require('../helpers/collection.js').CollectionHelper
@@ -24,24 +26,14 @@ class IO {
     //funkcja przeznaczona do pierwszego uruchomienia
 
     static createLocalLib() {
-        let self = this
         this.createDir(libraryMain)
         this.createDir(libraryPath)
         this.createDir(overwritePath)
-        //this.addFileFromURL('http://www.pdf995.com/samples/pdf.pdf')
-        this.isFileInDb('https://dnd.rem.uz/Advanced%20D%26D%20(unsorted)/Requiem%20The%20Grim%20Harvest.pdf', function (answer) {
-            if (answer) {
-                console.log('jest')
-            } else {
-                console.log('nie ma')
-            }
-        })
     }
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
 
-    static scan() {
-        var rootPath = dialog.showOpenDialog({properties: ['openDirectory']})
+    static scan(rootPath) {
         var pdfs = this.scanDirs(rootPath)
         console.log("Znalazłem: " + pdfs.length + " pdfów")
         for (var i = 0; i < pdfs.length; i++) {
@@ -478,8 +470,18 @@ class IO {
         } else {
             console.log('niepoprawny url')
         }
-
         //callback&&callback(fname)
+    }
+
+
+    static exportToZip(pArray) {
+        let zip = fs.createWriteStream('export.zip')
+        let zipper = archiver('zip')
+        zipper.pipe(zip)
+        for (let i = 0; i < pArray.length; i++){
+            zipper.append(fs.createReadStream(pArray[i]), { name: path.basename(pArray[i]).toString() })
+        }
+        zipper.finalize()
     }
 }
 
