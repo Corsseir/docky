@@ -178,8 +178,10 @@ function Tree() {
     }
 
     var editCollection = function (data) {
+        var section = new Import().getTemplate('#link-section-default', '#section-default')
         $('#folder-' + data.id).children('text').first().text(data.name)
         ipcRenderer.sendSync('editCollection', {'data': data})
+        $('#side-right').empty().append(section)
     }
 
     var removeCollection = function (mode) {
@@ -265,8 +267,10 @@ function Tree() {
     }
 
     var editFile = function (data) {
-        $('.f').find('#file-' + data.id).text(data.name)
+        var section = new Import().getTemplate('#link-section-default', '#section-default')
+        $('.f').find('#file-' + data.id).children('text').text(data.name)
         IO.editFile(data.id, data)
+        $('#side-right').empty().append(section)
     }
 
     var removeFile = function (mode, fileID) {
