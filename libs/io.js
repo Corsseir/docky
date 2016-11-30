@@ -165,7 +165,7 @@ class IO {
                 })
                 console.log('Dzialam1')
                 DatabaseOperation.File_Collection.CreateFile_Collection(fileId, collectionId)
-                callback()
+                callback(fileId)
             })
 
     }
