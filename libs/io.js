@@ -21,6 +21,7 @@ const dialog = require('electron').dialog
 const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
+let watcher = require('./fileWatcher.js').FileWatcher
 
 
 class IO {
@@ -30,6 +31,7 @@ class IO {
         this.createDir(libraryMain)
         this.createDir(libraryPath)
         this.createDir(overwritePath)
+        watcher.startWatch()
     }
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
@@ -151,6 +153,7 @@ class IO {
                 console.log("Jestem w create file " + "F_ID: " + fileId + " Sciezka: " + fileLocalPath)
                 DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
                     var locationId = this.lastID
+                    watcher.startSingleWatch(locationId)
                     console.log("Jestem w create location typ:local " + "L_ID:" + locationId + " FileID: " + fileId)
                     DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {
                         console.log("Skonczylem dodawać do F_L lokalną sciezkę")
@@ -158,6 +161,7 @@ class IO {
                 })
                 DatabaseOperation.Location.CreateLocation("global", fileSysPath, function addLocationId() {
                     var locationId2 = this.lastID
+                    watcher.startSingleWatch(locationId2)
                     console.log("Jestem w create location typ:global " + "L_ID: " + locationId2 + " F_ID: " + fileId)
                     DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId2, function () {
                         console.log("Skonczylem dodawać do F_L globalną scieżkę")
