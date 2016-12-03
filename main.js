@@ -12,6 +12,7 @@ const IO = require('./libs/io.js').IO
 const scanPDF = require('./components/scanPDF.js')
 const File = require('./components/file.js')
 const Collection = require('./components/collection.js')
+const Location = require('./components/location.js')
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 

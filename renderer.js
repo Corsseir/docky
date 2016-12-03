@@ -8,60 +8,63 @@ const {Menu, MenuItem} = remote;
 const {Database, DatabaseOperation} = require('./libs/database.js');
 const {IO} = require('./libs/io.js');
 const menuRoot = new Menu();
-const menuFolder = new Menu();
+const menuCollection = new Menu();
 const menuFile = new Menu();
 const contextMenuItems = {
     'root': {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
-        'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Folder().add() }}),
+        'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Collection().add() }}),
     },
     'collection': {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
-        'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Folder().add() }}),
-        'edit': new MenuItem({label: 'Edytuj', click() { new Folder().edit() }}),
-        'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Folder().paste() }}),
+        'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Collection().add() }}),
+        'edit': new MenuItem({label: 'Edytuj', click() { new Collection().edit() }}),
+        'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Collection().paste() }}),
         'remove': {
-            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new Folder().remove('collection') }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Folder().remove('global') }}),
+            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new Collection().remove('collection') }}),
+            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Collection().remove('global') }}),
         }
     },
     'file': {
         'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
         'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
+        'cut': new MenuItem({label: 'Wytnij', click() { new File().cut() }}),
         'remove': {
             'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new File().remove('collection') }}),
             'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
         }
     }
 };
-let clickedCollectionId;
-let clickedFileId;
-let copiedFile;
+let clickedCollectionId
+let clickedFileId
+let copiedFile
+let cuttedFile
 
 function Tree() {
     var renderCollection = function (collection) {
-        var link = document.querySelector('#link-partial-folder');
-        var template = link.import.querySelector('#partial-folder');
+        var link = document.querySelector('#link-partial-collection');
+        var template = link.import.querySelector('#partial-collection');
         var clone = document.importNode(template.content, true);
+        var el = document.createElement('div')
 
-        clone = $(clone)
-        clone.find('span').first().attr('id', 'folder-' + collection.ID_Collection)
-        clone.find('span').first().data('parent-folder', collection.ID_ParentCollection)
-        clone.find('text').first().text(collection.Name)
+        $(el).append(clone)
+        $(el).find('.c').first().attr('id', 'collection-' + collection.ID_Collection)
+        $(el).find('text').first().text(collection.Name)
 
-        return clone
+        return $(el).find('.c')
     }
 
     var renderFile = function (file) {
         var link = document.querySelector('#link-partial-file');
         var template = link.import.querySelector('#partial-file');
         var clone = document.importNode(template.content, true);
+        var el = document.createElement('div')
 
-        clone = $(clone)
-        clone.find('span').first().attr('id', 'file-' + file.ID_File)
-        clone.find('text').first().text(file.Filename)
+        $(el).append(clone)
+        $(el).find('.f').first().attr('id', 'file-' + file.ID_File)
+        $(el).find('text').first().text(file.Filename)
 
-        return clone
+        return $(el).find('.f')
     }
 
     var renderList = function () {
@@ -74,76 +77,81 @@ function Tree() {
         return clone
     }
 
-    var renderSubTree = function (root) {
-        var li = $('#folder-' + root.ID_Collection).closest('li')
-
-        li.find('ul').first().remove()
-        li.append(renderList())
-
-        var ul = li.find('ul').first()
-
-        Database.serialize(function () {
-            DatabaseOperation.Collection.GetAllCollections(null, root.ID_Collection, 'ID_Collection', 'ASC', function (err, collections) {
-                for (var i = 0; i < collections.length; i++) {
-                    console.log(collections[i])
-                    Database.serialize(function () {
-                        DatabaseOperation.Collection.GetCollection(collections[i].ID_Collection, function (err, row) {
-                            console.log(row)
-                            ul.append(renderCollection(row))
-                        })
-                    })
-                }
-            })
-        })
-
-        Database.serialize(function () {
-            DatabaseOperation.File_Collection.GetAllFile_Collection(null, root.ID_Collection, 'ID_File', 'ASC', function (err, file_collections) {
-                console.log(file_collections.length)
-                for (var i = 0; i < file_collections.length; i++) {
-                    console.log(file_collections[i])
-                    Database.serialize(function () {
-                        DatabaseOperation.File.GetFile(file_collections[i].ID_File, function (err, row) {
-                            ul.append(renderFile(row))
-                        })
-                    })
-                }
-            })
-        })
-    }
-
     var renderRoot = function (collection) {
         var clone = renderCollection(collection)
-
-        clone.find('li').first().attr('id', 'root')
         clone.find('i').first().removeClass('fa-folder')
         clone.find('i').first().addClass('fa-folder-open')
-        $('.folder-list-main').append(clone)
+        $('.collection-list-main').append(clone)
     }
 
-    var getParentCollection = function (callback, parent) {
-        console.log(parent)
-        if(typeof parent === 'undefined') {
-            DatabaseOperation.Collection.GetCollection(1, function (err, row) {
-                var root = row;
+    var renderSubTree = function (node, callback) {
+        var ul
+        var li
 
-                renderRoot(root, null)
-                callback(root)
-            })
-        } else {
-            DatabaseOperation.Collection.GetCollection(parseInt(parent.split('-')[1]), function (err, row) {
-                var root = row;
-
-                callback(root)
-            })
+        if($('#collection-1').length === 0) {
+            renderRoot(node)
         }
+
+        li = $('#collection-' + node.ID_Collection)
+        li.children('ul').remove()
+        li.append(renderList())
+
+        ul = li.children('ul').first()
+
+        DatabaseOperation.Collection.GetAllCollections(null, node.ID_Collection, 'ID_Collection', 'ASC', function (err, collections) {
+            collections.forEach(function (collection) {
+                Database.serialize(function () {
+                    DatabaseOperation.Collection.GetCollection(collection.ID_Collection, function (err, collection) {
+                        ul.append(renderCollection(collection))
+                    })
+                })
+            })
+        })
+
+        DatabaseOperation.File_Collection.GetAllFile_Collection(null, node.ID_Collection, 'ID_File', 'ASC', function (err, fileCollections) {
+            var quantity = fileCollections.length
+            var i = 0
+            var id
+
+            if(quantity === 0) {
+                callback(ul)
+            } else {
+                fileCollections.forEach(function (fileCollection) {
+                    Database.serialize(function () {
+                        DatabaseOperation.File.GetFile(fileCollection.ID_File, function (err, file) {
+                            ul.append(renderFile(file))
+
+                            i++
+
+                            if (i === quantity) {
+                                callback(ul)
+                            }
+                        })
+                    })
+                })
+            }
+        })
     }
 
-    var build = function (parent) {
-        getParentCollection(renderSubTree, parent)
+    var getParentCollection = function (parent, callback) {
+        DatabaseOperation.Collection.GetCollection(parent, function (err, node) {
+            renderSubTree(node, function (ul) {
+                ul.slideDown(100)
+                callback()
+            })
+        })
+    }
+
+    var build = function (parent, callback) {
+        getParentCollection(parent, function () {
+            if(callback) {
+                callback()
+            }
+        })
     }
 
     var addCollection = function (data) {
-        var collectionParentId = clickedCollectionId.find('span').first().attr('id').split('-')[1]
+        var collectionParentId = clickedCollectionId.attr('id').split('-')[1]
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         var collectionIcon = clickedCollectionId.find('i').first()
 
@@ -179,20 +187,20 @@ function Tree() {
 
     var editCollection = function (data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
-        $('#folder-' + data.id).children('text').first().text(data.name)
+        $('#collection-' + data.id).children('text').first().text(data.name)
         ipcRenderer.sendSync('editCollection', {'data': data})
         $('#side-right').empty().append(section)
     }
 
     var removeCollection = function (mode) {
-        var collectionID = clickedCollectionId.children('span').attr('id').split('-')[1]
+        var collectionID = clickedCollectionId.attr('id').split('-')[1]
         var files = clickedCollectionId.find('.f')
 
         if(mode === 'global') {
             var fileID
 
             files.each(function (i, file) {
-                fileID = $(file).children('span').attr('id')
+                fileID = $(file).attr('id')
                 $('*[id*=' + fileID + ']').closest('li').remove()
             })
         }
@@ -201,33 +209,56 @@ function Tree() {
         ipcRenderer.sendSync('removeCollection', {'data' : {'collectionID': collectionID, 'mode': mode}})
     }
 
-    var appendFile = function (file) {
-        if (clickedCollectionId.children('ul').first().children('.f').length === 0) {
-            clickedCollectionId.children('ul').first().append(file)
+    var insertFile = function (fileItem, callback) {
+        var files = clickedCollectionId.children('ul').first().children('.f')
+        var first = parseInt(fileItem.attr('id').split('-')[1])
+        var second
+
+        for(var i = 0; i < files.length; i++) {
+            second = parseInt($(files[i]).attr('id').split('-')[1])
+
+            if(first <= second) {
+                if(first !== second) {
+                    $(files[i]).before(fileItem)
+                }
+
+                callback()
+                break
+            }
+        }
+
+        if(i === files.length) {
+            clickedCollectionId.children('ul').first().append(fileItem)
+            callback()
+        }
+    }
+
+    var showBranch = function (callback) {
+        var collectionIcon = clickedCollectionId.find('i').first()
+
+        if (collectionIcon.hasClass('fa-folder')) {
+            build(clickedCollectionId.attr('id').split('-')[1], function () {
+                collectionIcon.removeClass('fa-folder')
+                collectionIcon.addClass('fa-folder-open')
+                callback()
+            })
         } else {
-            clickedCollectionId.children('ul').first().children('.f').last().after(file)
+            callback()
         }
     }
 
     var addFile = function (data) {
-        var collectionParentId = clickedCollectionId.find('span').first().attr('id').split('-')[1]
+        var collectionParentId = clickedCollectionId.attr('id').split('-')[1]
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         var pdfs = ['' + data.path]
         var tags
-        var collectionIcon = clickedCollectionId.find('i').first()
 
         console.log('collectionParenId: ' + collectionParentId)
 
         IO.addToLibAndDb(pdfs, collectionParentId, null, function(fileID) {
             if(fileID !== false) {
                 $('#side-right').empty().append(section)
-
-                if (collectionIcon.hasClass('fa-folder')) {
-                    collectionIcon.removeClass('fa-folder');
-                    collectionIcon.addClass('fa-folder-open');
-                    clickedCollectionId.find('ul').first().slideDown(100);
-
-                }
+                showBranch()
 
                 DatabaseOperation.File.GetFile(fileID, function (err, row) {
                     var file = renderFile(row)
@@ -238,7 +269,7 @@ function Tree() {
                         clickedCollectionId.append(list)
                     }
 
-                    appendFile(file)
+                    insertFile(file)
                 })
 
                 if(data.tag !== '') {
@@ -283,7 +314,8 @@ function Tree() {
 
     return {
         'build': build,
-        'appendFile': appendFile,
+        'showBranch': showBranch,
+        'insertFile': insertFile,
         'addCollection': addCollection,
         'editCollection': editCollection,
         'removeCollection': removeCollection,
@@ -293,16 +325,16 @@ function Tree() {
     }
 }
 
-function Folder () {
+function Collection () {
     var add = function () {
-        var section = new Import().getTemplate('#link-section-add-folder', '#section-add-folder')
+        var section = new Import().getTemplate('#link-section-add-collection', '#section-add-collection')
 
         $('#side-right').empty().append(section)
     }
 
     var edit = function () {
         var section = new Import().getTemplate('#link-section-edit-collection', '#section-edit-collection')
-        var collectionID = clickedCollectionId.find('span').first().attr('id').split('-')[1]
+        var collectionID = clickedCollectionId.attr('id').split('-')[1]
         var data = ipcRenderer.sendSync('getCollection', {'collectionID': collectionID})
 
         section.find('#id_name').val(data.name)
@@ -315,58 +347,72 @@ function Folder () {
     }
 
     var paste = function () {
-        var collectionID = clickedCollectionId.children('span').first().attr('id').split('-')[1]
-        var fileID = copiedFile.children('span').first().attr('id').split('-')[1]
-        var result
+        var collectionID = clickedCollectionId.attr('id').split('-')[1]
 
-        new Tree().appendFile(copiedFile[0])
-        contextMenuItems.collection.paste.enabled = false
-        result = ipcRenderer.sendSync('copyFile', {'data': {'fileID': fileID, 'collectionID': collectionID}})
+        new Tree().showBranch(function () {
+            if(copiedFile !== null) {
+                var fileID = copiedFile.attr('id').split('-')[1]
 
-        console.log(result)
+                new Tree().insertFile(copiedFile.clone(), function () {
+                    ipcRenderer.send('copyFile', {'data': {'fileID': fileID, 'collectionID': collectionID}})
+                })
+            } else if (cuttedFile !== null) {
+                var fileID = cuttedFile.attr('id').split('-')[1]
+                var previousCollectionID = cuttedFile.parents('li').first().attr('id').split('-')[1]
+
+                new Tree().insertFile(cuttedFile, function () {
+                    console.log(fileID)
+                    console.log(previousCollectionID)
+
+                    ipcRenderer.send('cutFile', {'data': {'fileID': fileID, 'collectionID': collectionID, 'previousCollectionID': previousCollectionID}})
+                })
+            }
+            $('.f').css('opacity', '1.0')
+            contextMenuItems.collection.paste.enabled = false
+        })
     }
 
-    var handleFolderClick = function (event) {
+    var handleCollectionClick = function (event) {
         console.log(event.which)
         if(event.which === 1) {
             console.log($(event.target))
-            var folder = $(event.target).closest('li');
-            var folderId = folder.find('span').first().attr('id')
-            console.log(folderId)
-            var folderIcon = folder.find('i').first();
-            var folderList = folder.find('ul').first();
-            console.log(folderIcon)
+            var collection = $(event.target).closest('li');
+            var collectionId = collection.attr('id').split('-')[1]
+            console.log(collectionId)
+            var collectionIcon = collection.find('i').first();
+            var collectionList = collection.find('ul').first();
+            console.log(collectionIcon)
 
-            if(folderIcon.hasClass('fa-folder')) {
-                new Tree().build(folderId)
-                folderIcon.removeClass('fa-folder');
-                folderIcon.addClass('fa-folder-open');
+            if(collectionIcon.hasClass('fa-folder')) {
+                new Tree().build(collectionId)
+                collectionIcon.removeClass('fa-folder');
+                collectionIcon.addClass('fa-folder-open');
 
-                if(typeof(folderList) !== 'undefined') {
-                    folderList.show();
+                if(typeof(collectionList) !== 'undefined') {
+                    collectionList.slideDown(100);
                 }
-            } else if(folderIcon.hasClass('fa-folder-open')) {
-                folder.find('ul').first().remove()
-                folderIcon.removeClass('fa-folder-open');
-                folderIcon.addClass('fa-folder');
+            } else if(collectionIcon.hasClass('fa-folder-open')) {
+                collection.find('ul').first().remove()
+                collectionIcon.removeClass('fa-folder-open');
+                collectionIcon.addClass('fa-folder');
 
-                if(typeof(folderList) !== 'undefined') {
-                    folderList.hide();
+                if(typeof(collectionList) !== 'undefined') {
+                    collectionList.slideUp(100);
                 }
             }
         } else if (event.which === 3) {
             console.log($(event.target))
             clickedCollectionId = $(event.target).closest('li')
-            if($(event.target).closest('li').attr('id') === 'root') {
+            if($(event.target).closest('li').attr('id') === 'collection-1') {
                 menuRoot.popup(remote.getCurrentWindow())
             } else {
-                menuFolder.popup(remote.getCurrentWindow())
+                menuCollection.popup(remote.getCurrentWindow())
             }
         }
     }
 
     var init = function () {
-        $(document).on('mousedown', '.folder', handleFolderClick)
+        $(document).on('mousedown', '.collection', handleCollectionClick)
     }
 
     return {
@@ -380,8 +426,8 @@ function Folder () {
 
 function File () {
     var remove = function (mode) {
-        var fileID = clickedFileId.children('span').attr('id').split('-')[1]
-        var collectionID = clickedFileId.parents('li').children('span').attr('id').split('-')[1]
+        var fileID = clickedFileId.attr('id').split('-')[1]
+        var collectionID = clickedFileId.parents('li').attr('id').split('-')[1]
 
         new Tree().removeFile(mode, fileID)
         IO.removeFile(fileID, collectionID, mode)
@@ -393,38 +439,34 @@ function File () {
         $('#side-right').empty().append(section)
     }
     
-    var edit = function () {
+    var edit = function (fileID) {
         var section = new Import().getTemplate('#link-section-edit-file', '#section-edit-file')
-        var id = clickedFileId.find('span').first().attr('id').split('-')[1]
-        var data = {}
-        var fileData = ipcRenderer.sendSync('getFileData', {'fileID': id})
-        console.log(fileData)
-        var quantity = fileData.data.tagIDs.length
-        var i = 0
+        var id = fileID
+        var data
 
-        data['name'] = fileData.data.name
-        data['tags'] = ''
+        if(typeof id === 'undefined') {
+            id = clickedFileId.attr('id').split('-')[1]
+        }
 
-        fileData.data.tagIDs.forEach(function (tagID) {
-            var tag = ipcRenderer.sendSync('getTag', {'tagID': tagID})
-
-            if(i === quantity) {
-                data['tags'] += tag.data.tag
-            } else {
-                data['tags'] += tag.data.tag + ' '
-            }
-            i++
-        })
-
+        data = ipcRenderer.sendSync('getFile', {'fileID': id})
         section.find('#id_name').val(data['name'])
-        section.find('#id_tag').val(data['tags'])
+        section.find('#id_tag').val(data['tag'].join(' '))
         section.find('#id_id').val(id)
         $('#side-right').empty().append(section)
     }
 
     var copy = function (event) {
-        copiedFile = clickedFileId.clone();
+        cuttedFile = null
+        copiedFile = clickedFileId;
         contextMenuItems.collection.paste.enabled = true;
+        copiedFile.css('opacity', '1.0')
+    }
+    
+    var cut = function (event) {
+        copiedFile = null
+        cuttedFile = clickedFileId;
+        contextMenuItems.collection.paste.enabled = true;
+        cuttedFile.css('opacity', '0.5')
     }
 
     var handleFileClick = function (event) {
@@ -433,9 +475,10 @@ function File () {
 
         if(event.which === 1) {
             var section = new Import().getTemplate('#link-section-info', '#section-info');
-            var fileId = clickedFileId.find('span').first().attr('id').split('-')[1]
+            var fileId = clickedFileId.attr('id').split('-')[1]
 
-            console.log(fileId)
+            section.find('#start-page').data('file-id', fileId)
+            console.log(section.find('#start-page').data('file-id'))
 
             DatabaseOperation.File.GetFile(fileId, function (err, row) {
                 var file = row
@@ -479,6 +522,7 @@ function File () {
         'edit': edit,
         'remove': remove,
         'copy': copy,
+        'cut': cut,
     }
 }
 
@@ -510,43 +554,47 @@ function Start () {
         //     $('#scan').children('span').text(' (0%)')
         // })
 
-        ipcRenderer.on('scanCompleted', function () {
-            console.log(2)
-            var parent = $('#root').children('span').attr('id')
-            console.log(parent)
-            new Tree().build(parent)
-            // $('#scan').removeClass('scan-proceed')
-        })
+        // ipcRenderer.on('scanCompleted', function () {
+        //     console.log(2)
+        //     var parent = $('#root').attr('id')
+        //     console.log(parent)
+        //     new Tree().build(parent)
+        //     // $('#scan').removeClass('scan-proceed')
+        // })
     }
 
     var init = function (event) {
         var section = new Import().getTemplate('#link-section-default', '#section-default');
         $('#side-right').empty().append(section);
+        cuttedFile = null
+        copiedFile = null
 
-        menuFolder.append(contextMenuItems.collection.addFile)
-        menuFolder.append(contextMenuItems.collection.addCollection)
-        menuFolder.append(contextMenuItems.collection.edit)
-        menuFolder.append(contextMenuItems.collection.paste)
-        menuFolder.append(contextMenuItems.collection.remove.collection)
-        menuFolder.append(contextMenuItems.collection.remove.global)
+        menuCollection.append(contextMenuItems.collection.addFile)
+        menuCollection.append(contextMenuItems.collection.addCollection)
+        menuCollection.append(contextMenuItems.collection.edit)
+        menuCollection.append(contextMenuItems.collection.paste)
+        menuCollection.append(contextMenuItems.collection.remove.collection)
+        menuCollection.append(contextMenuItems.collection.remove.global)
         menuFile.append(contextMenuItems.file.edit)
         menuFile.append(contextMenuItems.file.copy)
+        menuFile.append(contextMenuItems.file.cut)
         menuFile.append(contextMenuItems.file.remove.collection)
         menuFile.append(contextMenuItems.file.remove.global)
         menuRoot.append(contextMenuItems.root.addFile)
         menuRoot.append(contextMenuItems.root.addCollection)
 
-        new Tree().build()
+        new Tree().build(1)
 
         $(document).on('click', '#scan', handleScanClick)
     }
     init()
 }
 
-new Folder().init()
+new Collection().init()
 new File().init()
 new ButtonBar();
 new Start()
 
 exports.Tree = Tree
+exports.File = File
 

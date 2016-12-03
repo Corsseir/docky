@@ -1,7 +1,7 @@
 /**
  * Created by Daniel on 2016-10-21.
  */
-const sqlite3 = require('sqlite3').verbose()
+const sqlite3 = require('sqlite3')
 const Database = new sqlite3.Database('Database.sqlite3').run('PRAGMA foreign_keys = ON')
 
 class DatabaseOperation
