@@ -18,6 +18,8 @@ class DatabaseOperation
             Database.run('create table if not exists File_Collection(ID_File INTEGER NOT NULL, ID_Collection INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Collection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Collection))', ErrorCallback)
             Database.run('create table if not exists File_Location(ID_File INTEGER NOT NULL, ID_Location INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Location) REFERENCES Location(ID_Location) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Location))', ErrorCallback)
             Database.run('create table if not exists File_Tag(ID_File INTEGER NOT NULL, ID_Tag INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Tag) REFERENCES Tag(ID_Tag) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Tag))', ErrorCallback)
+            Database.run("CREATE  TRIGGER IF NOT EXISTS flCleanup AFTER DELETE ON File_Location WHEN (SELECT EXISTS(SELECT * FROM File_Location WHERE ID_File = OLD.ID_File) = 0)    BEGIN DELETE FROM File WHERE ID_File = OLD.ID_File; END")
+
         })
     }
 
