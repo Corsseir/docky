@@ -11,7 +11,7 @@ class FileWatcher {
                  fs.access(rows[i].Location, fs.constants.R_OK, function(err) {
                      if (err) {
                          db.Location.DeleteLocation(rows[i].ID_Location)
-                         console.log("Usunieto " + row.ID_Location)
+                         console.log("Usunieto " + rows[i].Location)
                      } else {
                          watch(rows[i])
                      }
@@ -25,7 +25,7 @@ class FileWatcher {
             fs.access(row.Location, fs.constants.R_OK, function(err) {
                 if (err) {
                     db.Location.DeleteLocation(row.ID_Location)
-                    console.log("Usunieto " + row.ID_Location)
+                    console.log("Usunieto " + row.Location)
                 } else {
                     watch(row)
                 }

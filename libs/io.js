@@ -17,6 +17,7 @@ const Database = require('./database.js').Database
 const DatabaseOperation = require('./database.js').DatabaseOperation
 const CollectionHelper = require('../helpers/collection.js').CollectionHelper
 const dialog = require('electron').dialog
+const url = require('./urlHandler.js').URLHandler
 //sciezki
 const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
@@ -49,30 +50,43 @@ class IO {
         return pdfs
     }
 
-    //Dodaje dowolną liczbę plików do lib i db, input to tablica
-
-    static addToLibAndDb(pdfs, collectionId, filename, callback) {
-        var self = this;
-        var i;
-
-        for (i = 0; i < pdfs.length; i++) {
-            var element = pdfs[i]
-            console.log("addToLibAndDb Element: " + element + "Collection id: " + collectionId)
-            var fName = path.basename(element).toString()
-            var pathInLib = libraryPath + "/" + fName
-            self.addFile(pathInLib, element, function (result) {
-                console.log("Obiekt result: " + result.local + " , " + result.type)
-                self.addToDb(result, collectionId, filename, function (fileID) {
-                    if(i === pdfs.length) {
-                        callback(fileID)
-                    }
+    //Sprawdza czy wprowadzono url
+    static checkForUrl(pdfs, callback) {
+        if (pdfs.length === 1) {
+            if (pdfs[0].substring(0,5) ==='https' || pdfs[0].substring(0,4) ==='http') {
+                url.addFileFromURL(pdfs[0], function (file){
+                    console.log(file[0])
+                    pdfs[0] = file[0]
+                    callback && callback(pdfs)
                 })
-            })
+            } else {
+                callback && callback(pdfs)
+            }
+        } else {
+            callback && callback(pdfs)
         }
+    }
 
-        if (i === pdfs.length || pdfs.length === 0) {
-            console.log("Zakonczono dodawanie")
-        }
+    //Dodaje dowolną liczbę plików do lib i db, input to tablica
+    static addToLibAndDb(pdfsO, collectionId, filename, callback) {
+        let self = this
+        self.checkForUrl(pdfsO, function (pdfs) {
+            for (let i = 0; i < pdfs.length; i++) {
+                var element = pdfs[i]
+                console.log("addToLibAndDb Element: " + element + "Collection id: " + collectionId)
+                var fName = path.basename(element).toString()
+                var pathInLib = libraryPath + "/" + fName
+                self.addFile(pathInLib, element, function (result) {
+                    console.log("Obiekt result: " + result.local + " , " + result.type)
+                    self.addToDb(result, collectionId, filename, function (fileID) {
+                        if(i === pdfs.length) {
+                            callback(fileID)
+                        }
+                    })
+                })
+            }
+        })
+
     }
 
     static addToLibAndDbFromScan(pdfs, callback) {
@@ -176,7 +190,7 @@ class IO {
 
 
     static addFile(pathInLib, filePath, callback){
-        var result = new Object()
+        var result = {}
         let self = this
         self.createChecksum(filePath, function compareFiles(checksum) {
             console.log("Stworzyłem checksum: " + checksum)
