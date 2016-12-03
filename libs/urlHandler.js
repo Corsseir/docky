@@ -10,8 +10,8 @@ let temp = require('os').tmpdir()
 
 class URLHandler {
 
-    static addFileFromURL(url, callback) {
-        downloadFile(url, function (fname) {
+    static downloadFile(url, callback) {
+        download(url, function (fname) {
             let file = []
             console.log('Rozpoczynam przekazanie ' + fname + ' ooo ')
             file.push(fname)
@@ -21,7 +21,7 @@ class URLHandler {
 
     static isFileInDb(url, callback){
         DatabaseOperation.File.GetAllFiles(null, null, null, function comp (err, rows){
-            downloadFile(url, function (fname){
+            download(url, function (fname){
                 createChecksum(fname, function (checksum){
                     let r = rows.filter(isChecksumInArr, checksum)
                     if (r.length > 1) {
@@ -52,7 +52,7 @@ function isChecksumInArr(element){
     return (element.Checksum === this)
 }
 
-function downloadFile(url, callback) {
+function download(url, callback) {
     let parts = url.split('/')
     let parts2 = parts[parts.length - 1].split('.')
     console.log(temp)

@@ -54,7 +54,7 @@ class IO {
     static checkForUrl(pdfs, callback) {
         if (pdfs.length === 1) {
             if (pdfs[0].substring(0,5) ==='https' || pdfs[0].substring(0,4) ==='http') {
-                url.addFileFromURL(pdfs[0], function (file){
+                url.downloadFile(pdfs[0], function (file){
                     console.log(file[0])
                     pdfs[0] = file[0]
                     callback && callback(pdfs)
