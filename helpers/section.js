@@ -5,11 +5,17 @@
 let previousSections = []
 
 class Section {
-    render(section, callback) {
+    render(section, clear, callback) {
         $('#side-right').fadeOut(150, function () {
+            console.log(previousSections)
             previousSections.push($('#side-right').contents())
             $('#side-right').empty().append(section)
             $('#side-right').fadeIn(150)
+
+            if(clear) {
+                previousSections = []
+            }
+
             callback && callback()
         })
     }

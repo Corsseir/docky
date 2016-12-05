@@ -187,13 +187,13 @@ class Tree {
             }
             var section = new Import().getTemplate('#link-section-default', '#section-default')
 
-            new Section().render(section)
+            new Section().render(section, false)
         })
     }
 
     editCollection(data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
-        new Section().render(section)
+        new Section().render(section, false)
 
         if(data !== null) {
             $('#collection-' + data.id).children('span').children('text').first().text(data.name)
@@ -254,14 +254,14 @@ class Tree {
             }
             var section = new Import().getTemplate('#link-section-default', '#section-default')
 
-            new Section().render(section)
+            new Section().render(section, false)
         })
     }
 
     editFile(data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         $('*[id*=file-' + data.id + ']').children('span').children('text').text(data.name)
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     removeFile(mode, fileID) {
@@ -280,7 +280,7 @@ class Collection {
 
         section.find('#id_parent').val(collectionParentID)
         section.find('#accept').attr('id', 'accept-collection-add')
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     edit() {
@@ -292,7 +292,7 @@ class Collection {
         section.find('#id_name').val(data.Name)
         section.find('#id_id').val(data.ID_Collection)
         section.find('#accept').attr('id', 'accept-collection-edit')
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     remove(mode) {
@@ -304,7 +304,7 @@ class Collection {
         new Tree().removeCollection(mode)
 
         if(sectionType !== 'default') {
-            new Section().render(section)
+            new Section().render(section, false)
 
         }
 
@@ -382,7 +382,7 @@ class File {
         section.find('#id_parent').val(collectionParentID)
         section.find('#accept').attr('id', 'accept-file-add')
 
-        new Section().render(section)
+        new Section().render(section, false)
     }
     
     edit(fileID) {
@@ -404,7 +404,7 @@ class File {
         section.find('#id_tag').val(data.tag.sort().join(' '))
         section.find('#id_id').val(id)
         section.find('#accept').attr('id', 'accept-file-edit')
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     remove(mode) {
@@ -416,7 +416,7 @@ class File {
         new Tree().removeFile(mode, fileID)
 
         if(sectionType !== 'default') {
-            new Section().render(section, function () {
+            new Section().render(section, false, function () {
                 ipcRenderer.send('removeFile', {'data': {'fileID': fileID, 'collectionID': collectionID, 'mode': mode}})
             })
         } else {
@@ -456,7 +456,7 @@ class File {
             section.find('#info-global').append(location.global.path)
             section.find('#start-page').data('file-id', fileID)
 
-            new Section().render(section)
+            new Section().render(section, false)
         } else if (event.which === 3) {
             menuFile.popup(remote.getCurrentWindow())
         }
@@ -473,10 +473,17 @@ class ButtonBar {
         new Section().back()
     }
 
+    handleMainClick(event) {
+        var section = new Import().getTemplate('#link-section-default', '#section-default');
+
+        new Section().render(section, true)
+    }
+
     constructor() {
         var self = this
 
-        $(document).on('click', '#back', self.handleBackClick);
+        $(document).on('click', '#back', self.handleBackClick)
+        $(document).on('click', '#main', self.handleMainClick)
     }
 }
 
@@ -558,10 +565,15 @@ class Start {
                             'ID_Collection': result.collectionID
                         }
 
+                        $('#collection-' + result.collectionID).remove()
                         $('#collection-1').children('ul').prepend(new Tree().renderCollection(collection))
-                        new Notification().hide(function () {
-                            new Notification().unblock(function () {
-                                new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'Zeskanowane\'', 3000)
+                        clickedCollection = $('#collection-' + result.collectionID)
+                        new Tree().showBranch(function () {
+                            clickedCollection = null
+                            new Notification().hide(function () {
+                                new Notification().unblock(function () {
+                                    new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'Zeskanowane\'', 3000)
+                                })
                             })
                         })
                     } else if(result.status === 'notFound') {
