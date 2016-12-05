@@ -38,29 +38,37 @@ class Tag {
         })
     }
 
+    unique(tags, callback){
+
+    }
+
     add(data, callback) {
+        var self = this
+
         if(data.tag !== '') {
             var tags = data.tag.split(' ')
             var quantity = tags.length
             var i = 0
 
-            tags.forEach(function (tag) {
-                Database.serialize(function () {
-                    DatabaseOperation.Tag.GetAllTags(null, tag, null, null, function (err, tags) {
-                        Database.serialize(function () {
-                            if (tags.length === 1) {
-                                DatabaseOperation.File_Tag.CreateFile_Tag(data.id, tags[0].ID_Tag)
-                            } else if (tags.length === 0) {
-                                DatabaseOperation.Tag.CreateTag('Tag', tag, function () {
-                                    DatabaseOperation.File_Tag.CreateFile_Tag(data.id, this.lastID)
-                                })
-                            }
+            self.unique(tags, function () {
+                tags.forEach(function (tag) {
+                    Database.serialize(function () {
+                        DatabaseOperation.Tag.GetAllTags(null, tag, null, null, function (err, tags) {
+                            Database.serialize(function () {
+                                if (tags.length === 1) {
+                                    DatabaseOperation.File_Tag.CreateFile_Tag(data.id, tags[0].ID_Tag)
+                                } else if (tags.length === 0) {
+                                    DatabaseOperation.Tag.CreateTag('Tag', tag, function () {
+                                        DatabaseOperation.File_Tag.CreateFile_Tag(data.id, this.lastID)
+                                    })
+                                }
 
-                            i++
+                                i++
 
-                            if(i === quantity) {
-                                callback && callback()
-                            }
+                                if(i === quantity) {
+                                    callback && callback()
+                                }
+                            })
                         })
                     })
                 })

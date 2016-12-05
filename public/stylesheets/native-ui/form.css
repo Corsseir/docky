@@ -12,7 +12,7 @@
     cursor: pointer;
 }
 
-input {
+#form input {
     width: 250px;
     padding: 5px;
     border-radius: 5px;
@@ -23,11 +23,11 @@ input {
     margin-bottom: 5px;
 }
 
-input:focus {
+#form input:focus {
     outline: none;
     box-shadow: 0 0 3px #f44363;
 }
 
-table tr:nth-child(1) td {
+#form tr:nth-child(1) td {
     font-size: 100pt;
 }

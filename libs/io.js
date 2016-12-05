@@ -128,7 +128,10 @@ class IO {
         var fileLocalPath = element.local
         var fileSysPath = element.filesys
         var checksum = element.checksum
-        var fileName = path.basename(element.filesys).toString().split('.')[0]
+        var fileName = path.basename(element.filesys).toString()
+        var index = fileName.lastIndexOf('.')
+
+        fileName = fileName.slice(0, index)
         console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
 
         this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function (fileID) {
