@@ -29,7 +29,7 @@ class ScannerHelper {
         }
         //Przejdź rekurencyjnie po wszystkich podfolderach.
         for (var i = 0; i < dirsArray.length; i++) {
-            listPDFs(dirsArray[i], dirsArray, filesArray)
+            ScannerHelper.listPDFs(dirsArray[i], dirsArray, filesArray)
         }
     }
 }

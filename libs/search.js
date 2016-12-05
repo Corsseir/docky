@@ -21,15 +21,15 @@ class Search {
                 console.log("znalazlem " + tagIds.length + " tagow")
                 DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
                     console.log("znalazlem " + ftRows.length + " ftrows")
-                    for (let i = 0; i < ftRows.length; i++) {
-                        let matchingFiles = fileIds.filter(SearchHelper.isFileId, ftRows[i].ID_File)
-                        let matchingTags = tagIds.filter(SearchHelper.isTagId, ftRows[i].ID_Tag)
+                    ftRows.forEach(function (row){
+                        let matchingFiles = fileIds.filter(SearchHelper.isFileId, row.ID_File)
+                        let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
                         if (matchingFiles.length >= 1 || matchingTags.length >= 1) {
-                            results.push(ftRows[i].ID_File)
+                            results.push(row.ID_File)
                         }
-                    }
-                    results = results.filter(function (element, index){return results.indexOf(element) === index})
-                    callback && callback(results)
+                    })
+                    let ids = results.filter(function (element, index){return results.indexOf(element) === index})
+                    callback && callback(ids)
                 })
             })
         })
