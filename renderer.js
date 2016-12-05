@@ -489,20 +489,20 @@ class ButtonBar {
 
 class Search {
     search() {
-        // console.log(111)
-        // var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
-        // var files = []
-        // var file
-        // console.log(222)
-        //
-        // fileIDs.forEach(function (fileID) {
-        //     file = ipcRenderer.sendSync('getFile', {'fileID': fileID})
-        //     files.push(file)
-        // })
-        //
-        // files.forEach(function (file) {
-        //     $('#collection-0').children('ul').append(new Tree().renderFile(file))
-        // })
+        var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
+        var files = []
+        var file
+
+        console.log(fileIDs)
+
+        fileIDs.forEach(function (fileID) {
+            file = ipcRenderer.sendSync('getFile', {'fileID': fileID})
+            files.push(file)
+        })
+
+        files.forEach(function (file) {
+            $('#collection-0').children('ul').append(new Tree().renderFile(file))
+        })
 
         $('#collection-0').children('ul').slideDown('100')
     }
