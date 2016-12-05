@@ -13,7 +13,9 @@ class FileWatcher {
                          db.Location.DeleteLocation(rows[i].ID_Location)
                          console.log("Usunieto " + rows[i].Location)
                      } else {
-                         watch(rows[i])
+                         if (rows[i].Type === "global"){
+                             watch(rows[i])
+                         }
                      }
                  })
              }

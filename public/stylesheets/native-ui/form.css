@@ -1,0 +1,33 @@
+#id_path {
+    padding-right: 30px;
+    width: 225px;
+}
+
+#id_path-icon {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    color: #fafafa;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+input {
+    width: 250px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #F44336;
+    background-color: #424242;
+    font-family: Oswald;
+    color: #fafafa;
+    margin-bottom: 5px;
+}
+
+input:focus {
+    outline: none;
+    box-shadow: 0 0 3px #f44363;
+}
+
+img {
+    margin-bottom: 20px;
+}

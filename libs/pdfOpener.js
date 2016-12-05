@@ -8,6 +8,7 @@ class PDFOpener {
 
     static open(fpath) {
         let self = this
+
         fs.access(fpath, fs.constants.R_OK, function(err) {
             if (!err) {
                 self.resolveCommand(function(cmd){
@@ -39,4 +40,5 @@ class PDFOpener {
     }
 
 }
-exports.PDFopener = PDFOpener
+
+exports.PDFOpener = PDFOpener

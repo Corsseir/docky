@@ -2,42 +2,96 @@
  * Created by corsseir on 11/26/16.
  */
 
-const ipc = require('electron').ipcMain
-
-const Database = require('../libs/database').Database
-const DatabaseOperation = require('../libs/database').DatabaseOperation
+const {ipcMain} = require('electron')
+const {Database, DatabaseOperation} = require('../libs/database.js')
+const {IO} = require('../libs/io.js')
+const {Tag} = require('./tag.js')
+const {Location} = require('./location.js')
 
 class File {
     get(fileID, callback) {
         var data = {}
 
         DatabaseOperation.File.GetFile(fileID, function (err, file) {
-            data['name'] = file.Filename
-            data['tag'] = []
-            console.log(fileID)
+            data['file'] = file
+            callback && callback(data)
+        })
+    }
 
-            DatabaseOperation.File_Tag.GetAllFile_Tag(fileID, null, null, null, function (err, fileTags) {
-                var quantity = fileTags.length
-                var i = 0
+    add(data, callback) {
+        IO.addToLibAndDb([data.path], data.parent, function (result) {
+            if(result.status === 'success') {
+                DatabaseOperation.File.GetFile(result.fileID, function (err, file) {
+                    result['file'] = file
+                    if(data.tag.length !== 0) {
+                        data['id'] = file.ID_File
+                        new Tag().add(data, function () {
+                            callback && callback(result)
+                        })
+                    } else {
+                        callback && callback(result)
+                    }
+                })
+            } else {
+                callback && callback(result)
+            }
+        })
+    }
 
-                if(quantity === 0) {
-                    callback && callback(data)
-                } else {
-                    Database.serialize(function () {
-                        fileTags.forEach(function (fileTag) {
-                            DatabaseOperation.Tag.GetTag(fileTag.ID_Tag, function (err, tag) {
-                                data['tag'].push(tag.Value)
-                                console.log(data)
+    edit(data, callback) {
+        DatabaseOperation.File.GetFile(data.id, function (err, file) {
+            var equal = false
+
+            if(file.Filename === data.name) {
+                equal = true
+            }
+
+            new Location().edit(data, file, equal, function () {
+                new Tag().remove(data.id, function () {
+                    new Tag().add(data, function () {
+                        DatabaseOperation.File.UpdateFile(data.id, file.ID_BLOB, data.name, file.Checksum)
+                        callback && callback({'status': 'success'})
+                    })
+                })
+            })
+        })
+    }
+
+    remove(data, callback) {
+        var fileID = data.fileID
+        var collectionID = data.collectionID
+        var mode = data.mode
+
+        DatabaseOperation.File_Collection.GetAllFile_Collection(fileID, null, null, null, function (err, rows) {
+            var quantity = rows.length
+
+            if(quantity === 1 || mode === 'global') {
+                new Tag().remove(fileID, function () {
+                    new Location().remove(fileID, function (paths) {
+                        var quantity = paths.length
+                        var i = 0
+
+                        if(quantity === 0) {
+                            callback && callback({'status': 'success'})
+                        } else {
+                            paths.forEach(function (path) {
+                                IO.removeFile(path, function () {
+                                    DatabaseOperation.File.DeleteFile(fileID)
+                                })
+
                                 i++
-                                console.log(i)
-                                if (i === quantity) {
-                                    callback && callback(data)
+
+                                if(i === quantity) {
+                                    callback && callback({'status': 'success'})
                                 }
                             })
-                        })
+                        }
                     })
-                }
-            })
+                })
+            } else {
+                DatabaseOperation.File_Collection.DeleteFile_Collection(fileID, collectionID)
+                callback && callback({'status': 'success'})
+            }
         })
     }
 
@@ -64,22 +118,40 @@ class File {
         })
     }
 
-    constructor() {
+    init() {
         var self = this
 
-        ipc.on('getFile', function (event, arg) {
+        ipcMain.on('getFile', function (event, arg) {
             self.get(arg.fileID, function (data) {
                 event.returnValue = data
             })
         })
 
-        ipc.on('copyFile', function (event, arg) {
+        ipcMain.on('addFile', function (event, arg) {
+            self.add(arg.data, function (result) {
+                event.returnValue = result
+            })
+        })
+
+        ipcMain.on('editFile', function (event, arg) {
+            self.edit(arg.data, function (result) {
+                event.returnValue = result
+            })
+        })
+
+        ipcMain.on('removeFile', function (event, arg) {
+            self.remove(arg.data, function (result) {
+                event.returnValue = result
+            })
+        })
+
+        ipcMain.on('copyFile', function (event, arg) {
             self.copy(arg.data, function (data) {
                 event.sender.send('copyFileDone', data)
             })
         })
 
-        ipc.on('cutFile', function (event, arg) {
+        ipcMain.on('cutFile', function (event, arg) {
             self.cut(arg.data, function (data) {
                 event.sender.send('cutFileDone', data)
             })
@@ -87,7 +159,7 @@ class File {
     }
 }
 
-new File()
+new File().init()
 
 exports.File = File
 

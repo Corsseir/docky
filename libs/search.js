@@ -3,11 +3,12 @@
  */
 const Database = require('./database.js').Database
 const DatabaseOperation = require('./database.js').DatabaseOperation
+const {ipcMain} = require('electron')
 
 class Search {
 
     //W cb otrzymujemy tablice wszystkich FileID, ktore sa powiazane z szukana wartoscia
-    static findAllFileId(value, callback) {
+    findAllFileId(value, callback) {
         let fileIds = []
         findFile(value, function filterFiles (fileRows) {
             parseFileRows(fileRows, function getFid(fIds){
@@ -25,7 +26,19 @@ class Search {
             })
         })
     }
+
+    constructor() {
+        var self = this
+
+        ipcMain.on('search', function (event, arg) {
+            self.findAllFileId(arg.phrase, function (fileIDs) {
+                event.returnValue = fileIDs
+            })
+        })
+    }
 }
+
+new Search()
 
 exports.Search = Search
 
@@ -41,9 +54,11 @@ function findFile(value, callback) {
 }
 //W cb otrzymujemy wiersze tabeli Tag o Name lub Value = szukanej
 function findTag(value, callback) {
-    DatabaseOperation.Tag.GetAllTags(null, null, null, null, function lookupF(err, rows) {
-        let results = rows.filter(isTagInArr, value)
-        callback && callback (results)
+    DatabaseOperation.Tag.GetAllTags(null, value, null, null, function lookupF(err, rows) {
+        console.log(rows.length + "findTag")
+        //let results = rows.filter(isTagInArr, value)
+        //console.log(results.length + "findTag2")
+        callback && callback (rows)
     })
 }
 //W cb otrzymujemy tablice FileID tabeli File

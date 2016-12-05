@@ -8,10 +8,8 @@
         <link rel="stylesheet" href="public/stylesheets/index/index.css">
         <link rel="import" href="sections/native-ui/default.html" id="link-section-default">
         <link rel="import" href="sections/native-ui/info.html" id="link-section-info">
-        <link rel="import" href="sections/native-ui/addCollection.html" id="link-section-add-collection">
-        <link rel="import" href="sections/native-ui/editCollection.html" id="link-section-edit-collection">
-        <link rel="import" href="sections/native-ui/addFile.html" id="link-section-add-file">
-        <link rel="import" href="sections/native-ui/editFile.html" id="link-section-edit-file">
+        <link rel="import" href="sections/native-ui/collectionForm.html" id="link-section-form-collection">
+        <link rel="import" href="sections/native-ui/fileForm.html" id="link-section-form-file">
         <link rel="import" href="sections/native-ui/previewFile.html" id="link-section-preview-file">
         <link rel="import" href="sections/partials/collection.html" id="link-partial-collection">
         <link rel="import" href="sections/partials/file.html" id="link-partial-file">
@@ -19,11 +17,8 @@
     </head>
     <body>
         <div class="side-display" id="side-left">
-            <div class="tab-item tab-item-selected">
+            <div class="tab-item">
                 Katalogi
-            </div
-            ><div class="tab-item">
-                Tagi
             </div>
             <ul class="collection-list-main collection-list">
             </ul>
@@ -33,15 +28,16 @@
             </div>
         </div
         ><div class="side-display" id="side-right">
-
         </div>
+        <div class="block"></div>
         <script>require('./libs/io.js');</script>
     </body>
 
     <script>
         const $ = require('jquery');
-        const Import = require('./helpers/import.js').Import
-        // You can also require other files to run in this process
+        const {Import} = require('./helpers/import.js')
+        const {Form} = require('./helpers/form.js')
+        const {Notification} = require('./helpers/notification.js')
         require('./renderer.js');
     </script>
 </html>

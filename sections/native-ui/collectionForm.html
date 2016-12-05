@@ -1,0 +1,35 @@
+<template id="section-form-collection">
+    <link rel="stylesheet" href="public/stylesheets/native-ui/form.css">
+    <div id="start-page">
+        <table>
+            <tr>
+                <td style="text-align: center;">
+                    <img src="public/images/logo.png">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" name="name" id="id_name" placeholder="Nazwa">
+                </td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="id" id="id_id">
+                </td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="parent" id="id_parent">
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="button-bar">
+        <div class="button-default" id="back">Cofnij</div
+        ><div class="button-default" id="accept">Zatwierdź</div>
+    </div>
+    <script>
+        // You can also require other files to run in this process
+        require('./renderers/collection.js')
+    </script>
+</template>

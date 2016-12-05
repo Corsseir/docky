@@ -34,11 +34,13 @@ class PDFViewer {
         PDFJS.getDocument(path).then(function(pdf) {
             $('#page-current').empty().text(pageNumber)
             $('#page-all').empty().text(pdf.pdfInfo.numPages)
-            self.render(pdf, pageNumber)
+            self.render(pdf, pageNumber, true, function () {
+                $('canvas').fadeIn(100)
+            })
         })
     }
 
-    render(pdf, pageNumber) {
+    render(pdf, pageNumber, hide, callback) {
         pdf.getPage(pageNumber).then(function(page) {
             var canvas = document.createElement('canvas')
             var context = canvas.getContext('2d')
@@ -47,6 +49,10 @@ class PDFViewer {
             var width = $('#start-page').width()
             var height = $('#start-page').height() - 10 //10px margin-bottom
 
+            if(hide) {
+                $(canvas).css('display', 'none')
+            }
+
             $('#start-page').empty().append(canvas)
             scale = width / viewport.width
             viewport = page.getViewport(scale)
@@ -54,7 +60,6 @@ class PDFViewer {
 
             if(viewport.height > height) {
                 viewport.width = viewport.width - scrollbarWidth
-                console.log('wysokość jest większa')
             }
 
             canvas.width = viewport.width
@@ -63,15 +68,18 @@ class PDFViewer {
                 canvasContext: context,
                 viewport: viewport
             }
+
             page.render(renderContext)
+            pdfView = pdf
+
+            callback && callback()
         })
-        pdfView = pdf
     }
 
     updatePDFSize(event, self) {
         var currentPage = parseInt($('#page-current').text())
 
-        self.render(pdfView, currentPage)
+        self.render(pdfView, currentPage, false)
     }
 
     handleClickPager(event, self) {
@@ -94,8 +102,12 @@ class PDFViewer {
         }
 
         if(! limit) {
-            self.render(pdfView, currentPage)
-            $('#page-current').text(currentPage)
+            $('canvas').fadeOut(100, function () {
+                self.render(pdfView, currentPage, true, function () {
+                    $('#page-current').text(currentPage)
+                    $('canvas').fadeIn(100)
+                })
+            })
         }
     }
 }

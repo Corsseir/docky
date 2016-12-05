@@ -5,23 +5,18 @@
 //Następnie tworzy katalog na pliki pdf
 //node
 const fs = require ('fs')
-let path = require('path')
-let crypto = require('crypto')
-let streamEqual = require('stream-equal')
-let archiver = require('archiver')
-let pdfOpener = require('./pdfOpener.js').PDFopener
-const Search = require('./search.js').Search
 const scanner = require('./scanner.js').Scan
-const cp = require('child_process');
 const Database = require('./database.js').Database
 const DatabaseOperation = require('./database.js').DatabaseOperation
-const CollectionHelper = require('../helpers/collection.js').CollectionHelper
-const dialog = require('electron').dialog
 const url = require('./urlHandler.js').URLHandler
-//sciezki
 const libraryMain = "./DockyLibrary"
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
+
+let path = require('path')
+let crypto = require('crypto')
+let archiver = require('archiver')
+let pdfOpener = require('./pdfOpener.js').PDFopener
 let watcher = require('./fileWatcher.js').FileWatcher
 
 
@@ -37,21 +32,30 @@ class IO {
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
 
-    static scan(rootPath) {
+    static scan(rootPath, callback) {
         let pdfs = scanner.scanDirs(rootPath)
         console.log("Znalazłem: " + pdfs.length + " pdfów")
-        for (var i = 0; i < pdfs.length; i++) {
-            if (pdfs[i].includes(libraryPath)) {
-                pdfs.splice(i, 1)
-            } else {
-                console.log("PDF: " + pdfs[i])
+
+        if(pdfs.length === 0) {
+            callback && callback(pdfs)
+        } else {
+            for (var i = 0; i < pdfs.length; i++) {
+                if (pdfs[i].includes(libraryPath)) {
+                    pdfs.splice(i, 1)
+                } else {
+                    console.log("PDF: " + pdfs[i])
+                }
+
+                if(i === pdfs.length - 1) {
+                    callback && callback(pdfs)
+                }
             }
         }
-        return pdfs
     }
 
     //Sprawdza czy wprowadzono url
     static checkForUrl(pdfs, callback) {
+        console.log(pdfs)
         if (pdfs.length === 1) {
             if (pdfs[0].substring(0,5) ==='https' || pdfs[0].substring(0,4) ==='http') {
                 url.downloadFile(pdfs[0], function (file){
@@ -68,7 +72,7 @@ class IO {
     }
 
     //Dodaje dowolną liczbę plików do lib i db, input to tablica
-    static addToLibAndDb(pdfsO, collectionId, filename, callback) {
+    static addToLibAndDb(pdfsO, collectionId, callback) {
         let self = this
         self.checkForUrl(pdfsO, function (pdfs) {
             for (let i = 0; i < pdfs.length; i++) {
@@ -77,12 +81,19 @@ class IO {
                 var fName = path.basename(element).toString()
                 var pathInLib = libraryPath + "/" + fName
                 self.addFile(pathInLib, element, function (result) {
-                    console.log("Obiekt result: " + result.local + " , " + result.type)
-                    self.addToDb(result, collectionId, filename, function (fileID) {
-                        if(i === pdfs.length) {
-                            callback(fileID)
-                        }
-                    })
+                    if(typeof result.status === 'undefined') {
+                        console.log("Obiekt result: " + result.local + " , " + result.type)
+                        self.addToDb(result, collectionId, function (fileID) {
+                            if(i === pdfs.length - 1) {
+                                callback({
+                                    'status': 'success',
+                                    'fileID': fileID
+                                })
+                            }
+                        })
+                    } else {
+                        callback(result)
+                    }
                 })
             }
         })
@@ -97,14 +108,14 @@ class IO {
                 DatabaseOperation.Collection.CreateCollection("Zeskanowane", 1, function () {
                     var collectionId = this.lastID
 
-                    self.addToLibAndDb(pdfs, collectionId, null, function () {
-                        callback && callback()
+                    self.addToLibAndDb(pdfs, collectionId, function () {
+                        callback && callback(collectionId)
                     })
                 })
             } else if(rows.length === 1) {
-                self.addToLibAndDb(pdfs, rows[0].ID_Collection, null, function () {
+                self.addToLibAndDb(pdfs, rows[0].ID_Collection, function () {
                     console.log('skończyłem')
-                    callback && callback()
+                    callback && callback(rows[0].ID_Collection)
                 })
             }
         })
@@ -112,15 +123,12 @@ class IO {
 
     //Dodaje plik do bazy, pomocnicza dla addToLibAndDb
 
-    static addToDb(element, collectionId, fileName, callback) {
+    static addToDb(element, collectionId, callback) {
         console.log("Jestem w add to DB")
         var fileLocalPath = element.local
         var fileSysPath = element.filesys
         var checksum = element.checksum
-        //console.log("Dodaje do db plik : " + fileName)
-        if(fileName === null) {
-            fileName = path.basename(element.filesys).toString().split('.')[0]
-        }
+        var fileName = path.basename(element.filesys).toString().split('.')[0]
         console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
 
         this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function (fileID) {
@@ -167,7 +175,6 @@ class IO {
                 console.log("Jestem w create file " + "F_ID: " + fileId + " Sciezka: " + fileLocalPath)
                 DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
                     var locationId = this.lastID
-                    watcher.startSingleWatch(locationId)
                     console.log("Jestem w create location typ:local " + "L_ID:" + locationId + " FileID: " + fileId)
                     DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {
                         console.log("Skonczylem dodawać do F_L lokalną sciezkę")
@@ -201,19 +208,19 @@ class IO {
                 var baseN = path.basename(filePath, ".pdf").toString()
                 var ovPath = overwritePath + "/" + baseN
                 DatabaseOperation.File.GetAllFiles(baseN, null, null, function comp (err, rows) {
-                    if (!rows.filter(function(element) { return element.Checksum === fileChecksum})) {
+                    if (rows.filter(function(element) { return element.Checksum === fileChecksum}).length < 1) {
                         console.log("Chekcsum są różne")
                         fs.mkdir(ovPath, function handleMk(err) {
-                            addToOverwrite(err, result, filePath, ovPath, baseN, callback)
+                            self.addToOverwrite(err, result, filePath, ovPath, baseN, callback)
                         })
                     } else {
-                        console.log('Nie trzeba dodawać ' + filePath)
+                        callback && callback({'status': 'exist', 'name': baseN})
                     }
                 })
 
             } else {
                 console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
-                fs.createReadStream(filePath).pipe(fs.createWriteStream(pathInLib))
+                self.copyFile(filePath, pathInLib)
                 console.log("Liczba Piotra: " + 1)
                 createResult(result, filePath, pathInLib, "unique", function sendResult(resultObj) {
                     callback && callback(resultObj)
@@ -223,129 +230,32 @@ class IO {
 
     }
 
-    static editFile(fileID, data) {
-        DatabaseOperation.File.GetFile(fileID, function (err, file) {
-            Database.serialize(function () {
-                DatabaseOperation.File_Location.GetAllFile_Location(fileID, null, null, null, function (err, fileLocations) {
-                    console.log(1111)
-                    fileLocations.forEach(function (fileLocation) {
-                        DatabaseOperation.Location.GetLocation(fileLocation.ID_Location, function (err, location) {
-                            if(location.Type === 'local') {
-                                console.log(location.Location)
-                                console.log(file.Filename)
-                                console.log(data.name)
-                                var newLocation = location.Location.replace(file.Filename, data.name)
-                                fs.rename(location.Location, newLocation)
-                                DatabaseOperation.Location.UpdateLocation(location.ID_Location, location.Type, newLocation)
-                            }
-                        })
-                    })
-                })
-            })
-            Database.serialize(function () {
-                DatabaseOperation.File.UpdateFile(fileID, file.ID_BLOB, data.name, file.Checksum)
-            })
-            Database.serialize(function () {
-                DatabaseOperation.File_Tag.GetAllFile_Tag(fileID, null, null, null, function (err, fileTagByFile) {
-                    console.log('Liczba rekordów File_Tag po fileID: ' + fileTagByFile.length)
-
-                    fileTagByFile.forEach(function (fileTag) {
-                        console.log('fileTag.ID_Tag: ' + fileTag.ID_Tag)
-                        Database.serialize(function () {
-                            DatabaseOperation.File_Tag.GetAllFile_Tag(null, fileTag.ID_Tag, null, null, function (err, fileTagByTag) {
-                                console.log('Liczba rekordów File_Tag po tagID: ' + fileTagByTag.length)
-
-                                if (fileTagByTag.length === 1) {
-                                    DatabaseOperation.Tag.DeleteTag(fileTagByTag[0].ID_Tag)
-                                }
-                            })
-                        })
-                    })
-                })
-            })
-            Database.serialize(function () {
-                if(data.tag !== '') {
-                    var tags = data.tag.split(' ')
-
-                    tags.forEach(function (tag) {
-                        Database.serialize(function () {
-                            DatabaseOperation.Tag.GetAllTags(null, tag, null, null, function (err, rows) {
-                                Database.serialize(function () {
-                                    console.log(tag)
-                                    if (rows.length === 1) {
-                                        DatabaseOperation.File_Tag.CreateFile_Tag(fileID, rows[0].ID_Tag)
-                                    } else if (rows.length === 0) {
-                                        console.log(tag)
-                                        DatabaseOperation.Tag.CreateTag('Tag', tag, function () {
-                                            DatabaseOperation.File_Tag.CreateFile_Tag(fileID, this.lastID)
-                                        })
-                                    }
-                                })
-                            })
-                        })
-                    })
-                }
-            })
-        })
+    static copyFile(source, destination, callback) {
+        fs.createReadStream(source).pipe(fs.createWriteStream(destination))
+        callback && callback()
     }
 
-    static removeFile(fileID, collectionID, mode) {
-        DatabaseOperation.File_Collection.GetAllFile_Collection(fileID, null, null, null, function (err, rows) {
-            var quantity = rows.length
+    static editFile(previousLocation, newLocation, callback) {
+        fs.rename(previousLocation, newLocation)
+        callback && callback()
+    }
 
-            if(quantity === 1 || mode === 'global') {
-                Database.serialize(function () {
-                    DatabaseOperation.File_Tag.GetAllFile_Tag(fileID, null, null, null, function (err, fileTagByFile) {
-                        fileTagByFile.forEach(function (fileTag) {
-                            console.log('fileTag.ID_Tag: ' + fileTag.ID_Tag)
-                            Database.serialize(function () {
-                                DatabaseOperation.File_Tag.GetAllFile_Tag(null, fileTag.ID_Tag, null, null, function (err, fileTagByTag) {
-
-                                    if (fileTagByTag.length === 1) {
-                                        DatabaseOperation.Tag.DeleteTag(fileTagByTag[0].ID_Tag)
-                                    }
-                                })
-                            })
-                        })
-                    })
-                    DatabaseOperation.File_Location.GetAllFile_Location(fileID, null, null, null, function (err, rows) {
-                        var file_locations = rows;
-
-                        file_locations.forEach(function (file_location) {
-                            Database.serialize(function () {
-                                DatabaseOperation.Location.GetLocation(file_location.ID_Location, function (err, row) {
-                                    var location = row
-
-                                    if (location.Type === 'local') {
-                                        var path = location.Location
-
-                                        fs.exists(path, function (exists) {
-                                            if (exists) {
-                                                fs.unlink(path, function (err) {
-                                                    if (err) {
-                                                        alert("An error ocurred updating the file" + err.message)
-                                                        console.log(err);
-                                                        return
-                                                    }
-                                                    console.log("File succesfully deleted")
-                                                    DatabaseOperation.File.DeleteFile(fileID)
-                                                })
-                                            } else {
-                                                alert("This file doesn't exist, cannot delete")
-                                            }
-                                        });
-                                    }
-                                })
-                                DatabaseOperation.Location.DeleteLocation(file_location.ID_Location)
-                            })
-                        })
-                    })
-
+    static removeFile(path, callback) {
+        fs.exists(path, function (exists) {
+            if (exists) {
+                fs.unlink(path, function (err) {
+                    if (err) {
+                        alert("An error ocurred updating the file" + err.message)
+                        console.log(err);
+                        return
+                    }
+                    console.log("File succesfully deleted")
+                    callback()
                 })
             } else {
-                DatabaseOperation.File_Collection.DeleteFile_Collection(fileID, collectionID)
+                alert("This file doesn't exist, cannot delete")
             }
-        })
+        });
     }
 
     static exportToZip(pArray) {
@@ -356,6 +266,29 @@ class IO {
             zipper.append(fs.createReadStream(pArray[i]), { name: path.basename(pArray[i]).toString() })
         }
         zipper.finalize()
+    }
+
+    static addToOverwrite(err, result, filePath, ovPath, baseN, callback){
+        if (err) {
+            if (err.code === "EEXIST") {
+                fs.readdir(ovPath, function getFolders(err, files) {
+                    console.log("Katalog o nazwie" + ovPath + "jest już utworzony w overwrite")
+                    createOvFilePath(ovPath, baseN, files, function (newPath){
+                        fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
+                        createResult(result, filePath, newPath, "overwrite", function sendResult(resultObj) {
+                            callback && callback(resultObj)
+                        })
+                    })
+                })
+            }
+        } else {
+            console.log("Katalog o nazwie" + ovPath + "zostanie utworzony w overwrite")
+            var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
+            fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
+            createResult(result, filePath, newPath, "overwrite", function sendResult(resultObj) {
+                callback && callback(resultObj)
+            })
+        }
     }
 }
 
@@ -384,27 +317,4 @@ function createOvFilePath(ovFolderPath, baseN, files, callback) {
     var newName = "__" + newNumber
     var newPath = ovFolderPath + "/" + baseN + newName + ".pdf"
     callback && callback(newPath)
-}
-
-function addToOverwrite(err, result, filePath, ovPath, baseN, callback){
-    if (err) {
-        if (err.code === "EEXIST") {
-            fs.readdir(ovPath, function getFolders(err, files) {
-                console.log("Katalog o nazwie" + ovPath + "jest już utworzony w overwrite")
-                createOvFilePath(ovPath, baseN, files, function (newPath){
-                    fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
-                    createResult(result, filePath, newPath, "overwrite", function sendResult(resultObj) {
-                        callback && callback(resultObj)
-                    })
-                })
-            })
-        }
-    } else {
-        console.log("Katalog o nazwie" + ovPath + "zostanie utworzony w overwrite")
-        var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
-        fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
-        createResult(result, filePath, newPath, "overwrite", function sendResult(resultObj) {
-            callback && callback(resultObj)
-        })
-    }
 }

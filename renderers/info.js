@@ -4,6 +4,9 @@
 
 const {File} = require('../renderer')
 const {PDFViewer} = require('./previewFile.js')
+const {Section} = require('../helpers/section.js')
+const {PDFOpener} = require('electron').remote.require('./libs/pdfOpener.js')
+const {ipcRenderer} = require('electron')
 
 class Info {
     constructor() {
@@ -11,17 +14,26 @@ class Info {
 
         $(document).on('click', '#preview', self.handlePreviewClick)
         $(document).on('click', '#edit', self.handleEditClick)
+        $(document).on('click', '#open', self.handleOpenClick)
     }
 
     handlePreviewClick(event) {
         var section = new Import().getTemplate('#link-section-preview-file', '#section-preview-file')
         section.find('#start-page').data('file-id', $('#start-page').data('file-id'))
-        $('#side-right').empty().append(section)
-        new PDFViewer()
+        new Section().render(section, function () {
+            new PDFViewer()
+        })
     }
 
     handleEditClick(event) {
         new File().edit($('#start-page').data('file-id'))
+    }
+
+    handleOpenClick(event) {
+        var fileID = $('#start-page').data('file-id')
+        var location = ipcRenderer.sendSync('getLocation', {'fileID': fileID})
+
+        PDFOpener.open(location.local.path)
     }
 }
 

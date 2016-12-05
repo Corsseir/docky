@@ -1,0 +1,41 @@
+<template id="section-form-file">
+    <link rel="stylesheet" href="public/stylesheets/native-ui/form.css">
+    <div id="start-page">
+        <table>
+            <tr>
+                <td style="text-align: center;">
+                    <img src="public/images/logo.png">
+                </td>
+            </tr>
+            <tr>
+                <td style="position: relative;">
+                    <input type="text" name="path" id="id_path" placeholder="Ścieżka">
+                    <i id="id_path-icon" class="fa fa-folder"></i>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" name="tag" id="id_tag" placeholder="Tagi">
+                </td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="id" id="id_id">
+                </td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="parent" id="id_parent">
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="button-bar">
+        <div class="button-default" id="back">Cofnij</div
+        ><div class="button-default" id="accept">Zatwierdź</div>
+    </div>
+    <script>
+        // You can also require other files to run in this process
+        require('./renderers/file.js')
+    </script>
+</template>

@@ -1,20 +1,13 @@
 const electron = require('electron')
-// Module to control application life.
 const app = electron.app
-const dialog = electron.dialog
-// Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
-// Database Imports
-const Database = require('./libs/database.js').Database
-const DatabaseOperation = require('./libs/database.js').DatabaseOperation
-const IO = require('./libs/io.js').IO
-
-const scanPDF = require('./components/scanPDF.js')
-const File = require('./components/file.js')
-const Collection = require('./components/collection.js')
-const Location = require('./components/location.js')
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
+const {File} = require('./components/file.js')
+const {Collection} = require('./components/collection.js')
+const {Location} = require('./components/location.js')
+const {Dialog} = require('./helpers/dialog.js')
+const {Search} = require('./libs/search.js')
+const {IO} = require('./libs/io.js')
+const {Database, DatabaseOperation} = require('./libs/database.js')
 
 let mainWindow
 
@@ -45,25 +38,11 @@ function createFolders() {
 }
 
 function createRoot() {
-    DatabaseOperation.Collection.GetAllCollections(null, null, null, null, function (err, rows) {
-        var exist = false;
-        console.log(rows.length)
-        for (var i = 0; i < rows.length; i++) {
-            console.log(rows[i].ID_ParentCollection)
-            if (rows[i].ID_ParentCollection === null) {
-                exist = true;
-                break;
-            }
-        }
-
-        if (!exist) {
+    DatabaseOperation.Collection.GetAllCollections('/', null, null, null, function (err, collections) {
+        if (collections.length === 0) {
             DatabaseOperation.Collection.CreateCollection('/', null)
         }
     })
-}
-
-function getFilePath() {
-    return dialog.showOpenDialog({properties: ['openFile']})
 }
 
 // This method will be called when Electron has finished
@@ -93,4 +72,3 @@ app.on('activate', function () {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
-exports.getFilePath = getFilePath
