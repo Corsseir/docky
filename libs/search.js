@@ -14,21 +14,21 @@ class Search {
         //Szukanie pliku o podanej nazwie
         DatabaseOperation.File.GetAllFiles(value, null, null, function getFiles(err, fileRows) {
             fileIds = fileRows.map(SearchHelper.mapIds)
-            console.log("znalazlem " + fileIds.length + " plikow")
+            //console.log("znalazlem " + fileIds.length + " plikow")
             //Szukanie tagu o podanej nazwie
             DatabaseOperation.Tag.GetAllTags(null, value, null, null, function getTags(err, tagRows) {
                 tagIds = tagRows.map(SearchHelper.mapTags)
-                console.log("znalazlem " + tagIds.length + " tagow")
+                //console.log("znalazlem " + tagIds.length + " tagow")
                 DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
-                    console.log("znalazlem " + ftRows.length + " ftrows")
+                    //console.log("znalazlem " + ftRows.length + " ftrows")
                     ftRows.forEach(function (row){
-                        let matchingFiles = fileIds.filter(SearchHelper.isFileId, row.ID_File)
                         let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
-                        if (matchingFiles.length >= 1 || matchingTags.length >= 1) {
+                        if ( matchingTags.length >= 1) {
                             results.push(row.ID_File)
                         }
                     })
-                    let ids = results.filter(function (element, index){return results.indexOf(element) === index})
+                    let matchingFiles = results.concat(fileIds)
+                    let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
                     callback && callback(ids)
                 })
             })
@@ -40,6 +40,9 @@ class Search {
 
         ipcMain.on('search', function (event, arg) {
             self.findAllFileId(arg.phrase, function (fileIDs) {
+                for (let i = 0; i < fileIDs. length; i++){
+                    console.log(fileIDs[i])
+                }
                 event.returnValue = fileIDs
             })
         })
