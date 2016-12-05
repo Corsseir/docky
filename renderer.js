@@ -16,6 +16,7 @@ const contextMenuItems = {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
         'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Collection().add() }}),
         'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Collection().paste() }}),
+        'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
     },
     'collection': {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
@@ -27,6 +28,7 @@ const contextMenuItems = {
             'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Collection().remove('global') }}),
         },
         'fake': new MenuItem({label: 'Usuń', click() { $('#collection-0').remove() }}),
+        'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
     },
     'file': {
         'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
@@ -347,6 +349,16 @@ class Collection {
         })
     }
 
+    refresh() {
+        if(clickedCollection.children('span').children('i').hasClass('fa-folder-open')) {
+            clickedCollection.children('span').children('i').removeClass('fa-folder-open')
+            clickedCollection.children('span').children('i').addClass('fa-folder')
+        }
+
+        clickedCollection.children('ul').remove()
+        new Tree().showBranch()
+    }
+
     handleCollectionClick(event) {
         clickedCollection = $(event.target).closest('li')
 
@@ -599,6 +611,7 @@ class Start {
         menuCollection.append(contextMenuItems.collection.addCollection)
         menuCollection.append(contextMenuItems.collection.edit)
         menuCollection.append(contextMenuItems.collection.paste)
+        menuCollection.append(contextMenuItems.collection.refresh)
         menuCollection.append(contextMenuItems.collection.remove.collection)
         menuCollection.append(contextMenuItems.collection.remove.global)
         menuCollectionFake.append(contextMenuItems.collection.fake)
@@ -610,6 +623,7 @@ class Start {
         menuRoot.append(contextMenuItems.root.addFile)
         menuRoot.append(contextMenuItems.root.addCollection)
         menuRoot.append(contextMenuItems.root.paste)
+        menuRoot.append(contextMenuItems.root.refresh)
 
         new Collection().init()
         new File().init()
