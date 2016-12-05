@@ -11,6 +11,7 @@ const menuRoot = new Menu()
 const menuCollection = new Menu()
 const menuCollectionFake = new Menu()
 const menuFile = new Menu()
+const menuFileLimited = new Menu()
 const contextMenuItems = {
     'root': {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
@@ -36,6 +37,11 @@ const contextMenuItems = {
         'cut': new MenuItem({label: 'Wytnij', click() { new File().cut() }}),
         'remove': {
             'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new File().remove('collection') }}),
+            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
+        },
+        'limited': {
+            'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
+            'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
             'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
         }
     }
@@ -263,7 +269,11 @@ class Tree {
     editFile(data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         $('*[id*=file-' + data.id + ']').children('span').children('text').text(data.name)
-        new Section().render(section, false)
+        new Section().render(section, false, function () {
+            if($('#collection-0').length !== 0) {
+                new Search().rebuild()
+            }
+        })
     }
 
     removeFile(mode, fileID) {
@@ -461,6 +471,9 @@ class File {
             var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
             var location = ipcRenderer.sendSync('getLocation', {'fileID': fileID})
 
+            console.log(data)
+            console.log(location)
+
             section.find('#info-name').append(data.file.Filename)
             data = ipcRenderer.sendSync('getTags', {'fileID': fileID})
             section.find('#info-tag').append(data.tag.sort().join(' '))
@@ -470,7 +483,11 @@ class File {
 
             new Section().render(section, false)
         } else if (event.which === 3) {
-            menuFile.popup(remote.getCurrentWindow())
+            if(clickedFile.parents('li').first().attr('id') === 'collection-0') {
+                menuFileLimited.popup(remote.getCurrentWindow())
+            } else {
+                menuFile.popup(remote.getCurrentWindow())
+            }
         }
     }
 
@@ -503,20 +520,35 @@ class Search {
     search() {
         var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
         var files = []
-        var file
+        var data
 
-        console.log(fileIDs)
+        if(fileIDs.length !== 0) {
+            var quantity = fileIDs.length
+            var i = 0
 
-        fileIDs.forEach(function (fileID) {
-            file = ipcRenderer.sendSync('getFile', {'fileID': fileID})
-            files.push(file)
-        })
+            fileIDs.forEach(function (fileID) {
+                data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
+                console.log(data.file)
+                files.push(data.file)
+                i++
 
-        files.forEach(function (file) {
-            $('#collection-0').children('ul').append(new Tree().renderFile(file))
-        })
-
-        $('#collection-0').children('ul').slideDown('100')
+                if(i === quantity) {
+                    files.forEach(function (file) {
+                        $('#collection-0').children('ul').append(new Tree().renderFile(file))
+                    })
+                    new Notification().hide()
+                    $('#collection-0').children('span').children('i').removeClass('fa-folder')
+                    $('#collection-0').children('span').children('i').addClass('fa-folder-open')
+                    $('#collection-0').children('ul').slideDown('100')
+                }
+            })
+        } else {
+            new Notification().hide(function () {
+                $('#collection-0').children('span').children('i').removeClass('fa-folder-open')
+                $('#collection-0').children('span').children('i').addClass('fa-folder')
+                new Notification().show('Brak wyników wyszukiwania')
+            })
+        }
     }
 
     handleSearch(event, self) {
@@ -524,9 +556,7 @@ class Search {
             if($('#search').val() === '') {
                 $('#collection-0').remove()
                 searchPhrase = $('#search').val()
-            }
-
-            if($('#search').val() !== searchPhrase && $('#search').val() !== '') {
+            } else {
                 if ($('#collection-0').length !== 0) {
                     $('#collection-0').remove()
                 }
@@ -542,11 +572,17 @@ class Search {
                 $('#collection-1').children('ul').prepend(renderedFakeCollection)
                 $('#collection-0').append(new Tree().renderList())
 
-                new Notification().show('Wyszukiwanie...', 3000, function () {
+                new Notification().show('Wyszukiwanie...', 0, function () {
                     self.search()
                 })
             }
         }
+    }
+
+    rebuild() {
+        var self = this
+
+        self.handleSearch({'which': 13}, self)
     }
 
     init() {
@@ -620,6 +656,9 @@ class Start {
         menuFile.append(contextMenuItems.file.cut)
         menuFile.append(contextMenuItems.file.remove.collection)
         menuFile.append(contextMenuItems.file.remove.global)
+        menuFileLimited.append(contextMenuItems.file.limited.edit)
+        menuFileLimited.append(contextMenuItems.file.limited.copy)
+        menuFileLimited.append(contextMenuItems.file.limited.global)
         menuRoot.append(contextMenuItems.root.addFile)
         menuRoot.append(contextMenuItems.root.addCollection)
         menuRoot.append(contextMenuItems.root.paste)
