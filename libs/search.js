@@ -40,9 +40,6 @@ class Search {
 
         ipcMain.on('search', function (event, arg) {
             self.findAllFileId(arg.phrase, function (fileIDs) {
-                for (let i = 0; i < fileIDs. length; i++){
-                    console.log(fileIDs[i])
-                }
                 event.returnValue = fileIDs
             })
         })
