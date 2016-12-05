@@ -13,8 +13,11 @@ class URLHandler {
     static downloadFile(url, callback) {
         download(url, function (fname) {
             let file = []
-            console.log('Rozpoczynam przekazanie ' + fname + ' ooo ')
-            file.push(fname)
+            if (fname != ''){
+                file.push(fname)
+            } else {
+                callback && callback('get error', [])
+            }
             callback && callback(file)
         })
     }
@@ -22,14 +25,18 @@ class URLHandler {
     static isFileInDb(url, callback){
         DatabaseOperation.File.GetAllFiles(null, null, null, function comp (err, rows){
             download(url, function (fname){
-                createChecksum(fname, function (checksum){
-                    let r = rows.filter(isChecksumInArr, checksum)
-                    if (r.length > 1) {
-                        callback && callback(true)
-                    } else {
-                        callback && callback(false)
-                    }
-                })
+                if (fname === '') {
+                    callback&&callback('err', null)
+                } else {
+                    createChecksum(fname, function (checksum) {
+                        let r = rows.filter(isChecksumInArr, checksum)
+                        if (r.length > 1) {
+                            callback && callback(null, true)
+                        } else {
+                            callback && callback(null, false)
+                        }
+                    })
+                }
             })
         })
     }
@@ -38,7 +45,7 @@ class URLHandler {
 exports.URLHandler = URLHandler
 
 function createChecksum (fpath, callback) {
-    console.log ('Tworze checksum')
+    //console.log ('Tworze checksum')
     fpath = fpath.toString()
     let checksum = crypto.createHash('md5')
     let rs = fs.createReadStream(fpath)
@@ -55,29 +62,38 @@ function isChecksumInArr(element){
 function download(url, callback) {
     let parts = url.split('/')
     let parts2 = parts[parts.length - 1].split('.')
-    console.log(temp)
-    let fname =  temp + '' + parts2[0] + '.pdf'
+    //console.log(temp)
+    let fname =  '/' + temp + '' + parts2[0] + '.pdf'
     let pdf = fs.createWriteStream(fname)
 
     if (url.substring(0,5) ==='https') {
-        console.log('pobieram')
+        //console.log('pobieram')
         https.get(url, function(response) {
             response.pipe(pdf)
+            response.on('error', function() {
+                //console.log('blad przy pobieraniu')
+                callback && callback('')
+            })
             response.on('end', function() {
-                console.log('pobrano')
+                //console.log('pobrano')
                 callback && callback(fname)
             })
         })
     } else if (url.substring(0,4) ==='http') {
-        console.log('pobieram')
+        //console.log('pobieram')
         http.get(url, function(response) {
             response.pipe(pdf)
+            response.on('error', function() {
+                //console.log('blad przy pobieraniu')
+                callback && callback('')
+            })
             response.on('end', function() {
-                console.log('pobrano')
+                //console.log('pobrano')
                 callback && callback(fname)
             })
         })
     } else {
-        console.log('niepoprawny url')
+        //console.log('niepoprawny url')
+        callback && callback('')
     }
 }

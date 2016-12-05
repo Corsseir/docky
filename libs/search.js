@@ -7,21 +7,29 @@ const {ipcMain} = require('electron')
 
 class Search {
 
-    //W cb otrzymujemy tablice wszystkich FileID, ktore sa powiazane z szukana wartoscia
-    findAllFileId(value, callback) {
+    findAllFileId(value, callback){
+        let results = []
         let fileIds = []
-        findFile(value, function filterFiles (fileRows) {
-            parseFileRows(fileRows, function getFid(fIds){
-                fileIds = fIds
-                fileIds = fileIds.filter(function (element, index){return fileIds.indexOf(element) === index})
-                findTag(value, function filterTags(tagRows){
-                    parseTagRows(tagRows, function getTid(tIds){
-                        parseFileTag(tIds, function filterTagFile(ftIds){
-                            fileIds = fileIds.concat(ftIds)
-                            fileIds = fileIds.filter(function (element, index){return fileIds.indexOf(element) === index})
-                            callback && callback(fileIds)
-                        })
-                    })
+        let tagIds = []
+        //Szukanie pliku o podanej nazwie
+        DatabaseOperation.File.GetAllFiles(value, null, null, function getFiles(err, fileRows) {
+            fileIds = fileRows.map(SearchHelper.mapIds)
+            console.log("znalazlem " + fileIds.length + " plikow")
+            //Szukanie tagu o podanej nazwie
+            DatabaseOperation.Tag.GetAllTags(null, value, null, null, function getTags(err, tagRows) {
+                tagIds = tagRows.map(SearchHelper.mapTags)
+                console.log("znalazlem " + tagIds.length + " tagow")
+                DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
+                    console.log("znalazlem " + ftRows.length + " ftrows")
+                    for (let i = 0; i < ftRows.length; i++) {
+                        let matchingFiles = fileIds.filter(SearchHelper.isFileId, ftRows[i].ID_File)
+                        let matchingTags = tagIds.filter(SearchHelper.isTagId, ftRows[i].ID_Tag)
+                        if (matchingFiles.length >= 1 || matchingTags.length >= 1) {
+                            results.push(ftRows[i].ID_File)
+                        }
+                    }
+                    results = results.filter(function (element, index){return results.indexOf(element) === index})
+                    callback && callback(results)
                 })
             })
         })
@@ -42,49 +50,23 @@ new Search()
 
 exports.Search = Search
 
-function isTagInArr(element){
-    return (element.Name === this || element.Value === this)
-}
+class SearchHelper {
 
-//W cb otrzymujemy wiersze tabeli File o Filename = szukanej
-function findFile(value, callback) {
-    DatabaseOperation.File.GetAllFiles(value, null, null, function lookupF(err, rows) {
-        callback && callback (rows)
-    })
-}
-//W cb otrzymujemy wiersze tabeli Tag o Name lub Value = szukanej
-function findTag(value, callback) {
-    DatabaseOperation.Tag.GetAllTags(null, value, null, null, function lookupF(err, rows) {
-        console.log(rows.length + "findTag")
-        //let results = rows.filter(isTagInArr, value)
-        //console.log(results.length + "findTag2")
-        callback && callback (rows)
-    })
-}
-//W cb otrzymujemy tablice FileID tabeli File
-function parseFileRows (fileRows, callback) {
-    let ids = fileRows.map(function (element) {
-        let id = element.ID_File
-        return id
-    })
-    callback && callback(ids)
-}
-//W cb otrzymujemy tablice TagID tabeli Tag
-function parseTagRows(tagRows, callback) {
-    let ids = tagRows.map(function (element) {
-        return element.ID_Tag
-    })
-    callback && callback(ids)
-}
-//W cb otrzymujemy tablice FileID tabeli FileTag dla wszystkich TagID
-function parseFileTag(tagIds, callback){
-    let i
-    for (i = 0; i< tagIds.length; i++){
-        DatabaseOperation.File_Tag.GetAllFile_Tag(null, tagIds[i], null, null, function (err, rows){
-            rows = rows.map(function (element){
-                return element.ID_File
-            })
-            callback && callback(rows)
-        })
+    static isFileId(element){
+        return element === this
     }
+
+    static isTagId(element){
+        return element === this
+    }
+
+
+    static mapIds(element){
+        return element.ID_File
+    }
+
+    static mapTags(element){
+        return element.ID_Tag
+    }
+
 }

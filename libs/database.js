@@ -47,6 +47,8 @@ class DatabaseOperation
     }
 }
 
+DatabaseOperation.CreateTables()
+
 DatabaseOperation.Tag = class Tag
 {
     // The signature of the callback is function(err) {}

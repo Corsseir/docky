@@ -13,7 +13,8 @@ class PDFOpener {
             if (!err) {
                 self.resolveCommand(function(cmd){
                     if (!cmd) {return}
-                    cmd = cmd + ' ' + fpath
+                    cmd = cmd + ' "' + fpath + '"'
+                    console.log(cmd)
                     childProcess.exec(cmd)
                 })
             }
@@ -24,7 +25,7 @@ class PDFOpener {
         let cmd
         switch(process.platform){
             case 'win32':
-                cmd = 'start'
+                cmd = 'start "" '
                 break
             case 'darwin':
                 cmd = 'open'
