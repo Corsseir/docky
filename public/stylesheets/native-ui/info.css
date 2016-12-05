@@ -1,16 +1,22 @@
 table {
     font-size: 11pt;
+    max-width: 70%;
 }
 
 table td {
+    text-align: left;
+    vertical-align: top;
+}
+
+table tr:nth-child(1) td {
     text-align: center;
+    font-size: 100pt;
 }
 
 table td:nth-child(odd) {
-    width: 50%;
+    white-space: nowrap;
 }
 
 table td:nth-child(even) {
-    width: 50%;
     color: #bdbdbd;
 }
