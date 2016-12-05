@@ -18,7 +18,7 @@ class URLHandler {
             } else {
                 callback && callback('get error', [])
             }
-            callback && callback(file)
+            callback && callback(null, file)
         })
     }
 
