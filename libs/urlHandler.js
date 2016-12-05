@@ -63,7 +63,7 @@ function download(url, callback) {
     let parts = url.split('/')
     let parts2 = parts[parts.length - 1].split('.')
     //console.log(temp)
-    let fname =  '/' + temp + '' + parts2[0] + '.pdf'
+    let fname =  temp + '/'  + parts2[0] + '.pdf'
     let pdf = fs.createWriteStream(fname)
 
     if (url.substring(0,5) ==='https') {
