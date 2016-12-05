@@ -47,7 +47,7 @@ class DatabaseOperation
     }
 }
 
-
+DatabaseOperation.CreateTables();
 
 DatabaseOperation.Tag = class Tag
 {
