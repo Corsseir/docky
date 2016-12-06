@@ -31,8 +31,13 @@ class File {
                         notify.hide()
                         new Tree().addFile(result.file)
                     } else if (result.status === 'exist') {
-                        notify.hide()
-                        notify.show('Plik istnieje już w bazie danych pod nazwą \'' + result.name + '\'', 3000)
+                        notify.hide(function () {
+                            notify.show('Plik istnieje już w bazie danych pod nazwą \'' + result.name + '\'', 3000)
+                        })
+                    } else if (result.status === 'not_exist') {
+                        notify.hide(function () {
+                            notify.show('Wskazany plik nie istnieje', 3000)
+                        })
                     }
                 })
             }
