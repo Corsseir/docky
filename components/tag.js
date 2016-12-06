@@ -39,7 +39,23 @@ class Tag {
     }
 
     unique(tags, callback){
+        var firstIndex
+        var secondIndex
+        var result = tags
 
+        for(var i = 0; i < tags.length; i++) {
+            firstIndex = result.indexOf(tags[i])
+            secondIndex = result.lastIndexOf(tags[i])
+
+            if(firstIndex !== secondIndex) {
+                result.splice(secondIndex, 1)
+                i--
+            }
+
+            if(i === tags.length - 1) {
+                callback && callback(result)
+            }
+        }
     }
 
     add(data, callback) {
@@ -47,11 +63,12 @@ class Tag {
 
         if(data.tag !== '') {
             var tags = data.tag.split(' ')
-            var quantity = tags.length
             var i = 0
 
-            self.unique(tags, function () {
-                tags.forEach(function (tag) {
+            self.unique(tags, function (result) {
+                var quantity = result.length
+
+                result.forEach(function (tag) {
                     Database.serialize(function () {
                         DatabaseOperation.Tag.GetAllTags(null, tag, null, null, function (err, tags) {
                             Database.serialize(function () {

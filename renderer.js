@@ -11,11 +11,13 @@ const menuRoot = new Menu()
 const menuCollection = new Menu()
 const menuCollectionFake = new Menu()
 const menuFile = new Menu()
+const menuFileLimited = new Menu()
 const contextMenuItems = {
     'root': {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
         'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Collection().add() }}),
         'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Collection().paste() }}),
+        'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
     },
     'collection': {
         'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
@@ -27,6 +29,7 @@ const contextMenuItems = {
             'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Collection().remove('global') }}),
         },
         'fake': new MenuItem({label: 'Usuń', click() { $('#collection-0').remove() }}),
+        'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
     },
     'file': {
         'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
@@ -34,6 +37,11 @@ const contextMenuItems = {
         'cut': new MenuItem({label: 'Wytnij', click() { new File().cut() }}),
         'remove': {
             'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new File().remove('collection') }}),
+            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
+        },
+        'limited': {
+            'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
+            'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
             'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
         }
     }
@@ -187,13 +195,13 @@ class Tree {
             }
             var section = new Import().getTemplate('#link-section-default', '#section-default')
 
-            new Section().render(section)
+            new Section().render(section, false)
         })
     }
 
     editCollection(data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
-        new Section().render(section)
+        new Section().render(section, false)
 
         if(data !== null) {
             $('#collection-' + data.id).children('span').children('text').first().text(data.name)
@@ -254,14 +262,18 @@ class Tree {
             }
             var section = new Import().getTemplate('#link-section-default', '#section-default')
 
-            new Section().render(section)
+            new Section().render(section, false)
         })
     }
 
     editFile(data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         $('*[id*=file-' + data.id + ']').children('span').children('text').text(data.name)
-        new Section().render(section)
+        new Section().render(section, false, function () {
+            if($('#collection-0').length !== 0) {
+                new Search().rebuild()
+            }
+        })
     }
 
     removeFile(mode, fileID) {
@@ -280,7 +292,7 @@ class Collection {
 
         section.find('#id_parent').val(collectionParentID)
         section.find('#accept').attr('id', 'accept-collection-add')
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     edit() {
@@ -292,7 +304,7 @@ class Collection {
         section.find('#id_name').val(data.Name)
         section.find('#id_id').val(data.ID_Collection)
         section.find('#accept').attr('id', 'accept-collection-edit')
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     remove(mode) {
@@ -304,7 +316,7 @@ class Collection {
         new Tree().removeCollection(mode)
 
         if(sectionType !== 'default') {
-            new Section().render(section)
+            new Section().render(section, false)
 
         }
 
@@ -347,6 +359,16 @@ class Collection {
         })
     }
 
+    refresh() {
+        if(clickedCollection.children('span').children('i').hasClass('fa-folder-open')) {
+            clickedCollection.children('span').children('i').removeClass('fa-folder-open')
+            clickedCollection.children('span').children('i').addClass('fa-folder')
+        }
+
+        clickedCollection.children('ul').remove()
+        new Tree().showBranch()
+    }
+
     handleCollectionClick(event) {
         clickedCollection = $(event.target).closest('li')
 
@@ -382,7 +404,7 @@ class File {
         section.find('#id_parent').val(collectionParentID)
         section.find('#accept').attr('id', 'accept-file-add')
 
-        new Section().render(section)
+        new Section().render(section, false)
     }
     
     edit(fileID) {
@@ -404,7 +426,7 @@ class File {
         section.find('#id_tag').val(data.tag.sort().join(' '))
         section.find('#id_id').val(id)
         section.find('#accept').attr('id', 'accept-file-edit')
-        new Section().render(section)
+        new Section().render(section, false)
     }
 
     remove(mode) {
@@ -416,7 +438,7 @@ class File {
         new Tree().removeFile(mode, fileID)
 
         if(sectionType !== 'default') {
-            new Section().render(section, function () {
+            new Section().render(section, false, function () {
                 ipcRenderer.send('removeFile', {'data': {'fileID': fileID, 'collectionID': collectionID, 'mode': mode}})
             })
         } else {
@@ -449,6 +471,9 @@ class File {
             var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
             var location = ipcRenderer.sendSync('getLocation', {'fileID': fileID})
 
+            console.log(data)
+            console.log(location)
+
             section.find('#info-name').append(data.file.Filename)
             data = ipcRenderer.sendSync('getTags', {'fileID': fileID})
             section.find('#info-tag').append(data.tag.sort().join(' '))
@@ -456,9 +481,13 @@ class File {
             section.find('#info-global').append(location.global.path)
             section.find('#start-page').data('file-id', fileID)
 
-            new Section().render(section)
+            new Section().render(section, false)
         } else if (event.which === 3) {
-            menuFile.popup(remote.getCurrentWindow())
+            if(clickedFile.parents('li').first().attr('id') === 'collection-0') {
+                menuFileLimited.popup(remote.getCurrentWindow())
+            } else {
+                menuFile.popup(remote.getCurrentWindow())
+            }
         }
     }
 
@@ -473,31 +502,53 @@ class ButtonBar {
         new Section().back()
     }
 
+    handleMainClick(event) {
+        var section = new Import().getTemplate('#link-section-default', '#section-default');
+
+        new Section().render(section, true)
+    }
+
     constructor() {
         var self = this
 
-        $(document).on('click', '#back', self.handleBackClick);
+        $(document).on('click', '#back', self.handleBackClick)
+        $(document).on('click', '#main', self.handleMainClick)
     }
 }
 
 class Search {
     search() {
-        // console.log(111)
-        // var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
-        // var files = []
-        // var file
-        // console.log(222)
-        //
-        // fileIDs.forEach(function (fileID) {
-        //     file = ipcRenderer.sendSync('getFile', {'fileID': fileID})
-        //     files.push(file)
-        // })
-        //
-        // files.forEach(function (file) {
-        //     $('#collection-0').children('ul').append(new Tree().renderFile(file))
-        // })
+        var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
+        var files = []
+        var data
 
-        $('#collection-0').children('ul').slideDown('100')
+        if(fileIDs.length !== 0) {
+            var quantity = fileIDs.length
+            var i = 0
+
+            fileIDs.forEach(function (fileID) {
+                data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
+                console.log(data.file)
+                files.push(data.file)
+                i++
+
+                if(i === quantity) {
+                    files.forEach(function (file) {
+                        $('#collection-0').children('ul').append(new Tree().renderFile(file))
+                    })
+                    new Notification().hide()
+                    $('#collection-0').children('span').children('i').removeClass('fa-folder')
+                    $('#collection-0').children('span').children('i').addClass('fa-folder-open')
+                    $('#collection-0').children('ul').slideDown('100')
+                }
+            })
+        } else {
+            new Notification().hide(function () {
+                $('#collection-0').children('span').children('i').removeClass('fa-folder-open')
+                $('#collection-0').children('span').children('i').addClass('fa-folder')
+                new Notification().show('Brak wyników wyszukiwania')
+            })
+        }
     }
 
     handleSearch(event, self) {
@@ -505,9 +556,7 @@ class Search {
             if($('#search').val() === '') {
                 $('#collection-0').remove()
                 searchPhrase = $('#search').val()
-            }
-
-            if($('#search').val() !== searchPhrase && $('#search').val() !== '') {
+            } else {
                 if ($('#collection-0').length !== 0) {
                     $('#collection-0').remove()
                 }
@@ -523,11 +572,17 @@ class Search {
                 $('#collection-1').children('ul').prepend(renderedFakeCollection)
                 $('#collection-0').append(new Tree().renderList())
 
-                new Notification().show('Wyszukiwanie...', 3000, function () {
+                new Notification().show('Wyszukiwanie...', 0, function () {
                     self.search()
                 })
             }
         }
+    }
+
+    rebuild() {
+        var self = this
+
+        self.handleSearch({'which': 13}, self)
     }
 
     init() {
@@ -558,10 +613,15 @@ class Start {
                             'ID_Collection': result.collectionID
                         }
 
+                        $('#collection-' + result.collectionID).remove()
                         $('#collection-1').children('ul').prepend(new Tree().renderCollection(collection))
-                        new Notification().hide(function () {
-                            new Notification().unblock(function () {
-                                new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'Zeskanowane\'', 3000)
+                        clickedCollection = $('#collection-' + result.collectionID)
+                        new Tree().showBranch(function () {
+                            clickedCollection = null
+                            new Notification().hide(function () {
+                                new Notification().unblock(function () {
+                                    new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'Zeskanowane\'', 3000)
+                                })
                             })
                         })
                     } else if(result.status === 'notFound') {
@@ -587,6 +647,7 @@ class Start {
         menuCollection.append(contextMenuItems.collection.addCollection)
         menuCollection.append(contextMenuItems.collection.edit)
         menuCollection.append(contextMenuItems.collection.paste)
+        menuCollection.append(contextMenuItems.collection.refresh)
         menuCollection.append(contextMenuItems.collection.remove.collection)
         menuCollection.append(contextMenuItems.collection.remove.global)
         menuCollectionFake.append(contextMenuItems.collection.fake)
@@ -595,9 +656,13 @@ class Start {
         menuFile.append(contextMenuItems.file.cut)
         menuFile.append(contextMenuItems.file.remove.collection)
         menuFile.append(contextMenuItems.file.remove.global)
+        menuFileLimited.append(contextMenuItems.file.limited.edit)
+        menuFileLimited.append(contextMenuItems.file.limited.copy)
+        menuFileLimited.append(contextMenuItems.file.limited.global)
         menuRoot.append(contextMenuItems.root.addFile)
         menuRoot.append(contextMenuItems.root.addCollection)
         menuRoot.append(contextMenuItems.root.paste)
+        menuRoot.append(contextMenuItems.root.refresh)
 
         new Collection().init()
         new File().init()

@@ -20,7 +20,7 @@ class Info {
     handlePreviewClick(event) {
         var section = new Import().getTemplate('#link-section-preview-file', '#section-preview-file')
         section.find('#start-page').data('file-id', $('#start-page').data('file-id'))
-        new Section().render(section, function () {
+        new Section().render(section, false, function () {
             new PDFViewer()
         })
     }

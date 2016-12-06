@@ -34,7 +34,7 @@ class IO {
 
     static scan(rootPath, callback) {
         let pdfs = scanner.scanDirs(rootPath)
-        console.log("Znalazłem: " + pdfs.length + " pdfów")
+        //console.log("Znalazłem: " + pdfs.length + " pdfów")
 
         if(pdfs.length === 0) {
             callback && callback(pdfs)
@@ -43,7 +43,7 @@ class IO {
                 if (pdfs[i].includes(libraryPath)) {
                     pdfs.splice(i, 1)
                 } else {
-                    console.log("PDF: " + pdfs[i])
+                    //console.log("PDF: " + pdfs[i])
                 }
 
                 if(i === pdfs.length - 1) {
@@ -55,11 +55,11 @@ class IO {
 
     //Sprawdza czy wprowadzono url
     static checkForUrl(pdfs, callback) {
-        console.log(pdfs)
+        //console.log(pdfs)
         if (pdfs.length === 1) {
             if (pdfs[0].substring(0,5) ==='https' || pdfs[0].substring(0,4) ==='http') {
                 url.downloadFile(pdfs[0], function (file){
-                    console.log(file[0])
+                    //console.log(file[0])
                     pdfs[0] = file[0]
                     callback && callback(pdfs)
                 })
@@ -77,12 +77,12 @@ class IO {
         self.checkForUrl(pdfsO, function (pdfs) {
             for (let i = 0; i < pdfs.length; i++) {
                 var element = pdfs[i]
-                console.log("addToLibAndDb Element: " + element + "Collection id: " + collectionId)
+                //console.log("addToLibAndDb Element: " + element + "Collection id: " + collectionId)
                 var fName = path.basename(element).toString()
                 var pathInLib = libraryPath + "/" + fName
                 self.addFile(pathInLib, element, function (result) {
                     if(typeof result.status === 'undefined') {
-                        console.log("Obiekt result: " + result.local + " , " + result.type)
+                        //console.log("Obiekt result: " + result.local + " , " + result.type)
                         self.addToDb(result, collectionId, function (fileID) {
                             if(i === pdfs.length - 1) {
                                 callback({
@@ -114,7 +114,7 @@ class IO {
                 })
             } else if(rows.length === 1) {
                 self.addToLibAndDb(pdfs, rows[0].ID_Collection, function () {
-                    console.log('skończyłem')
+                    //console.log('skończyłem')
                     callback && callback(rows[0].ID_Collection)
                 })
             }
@@ -124,7 +124,7 @@ class IO {
     //Dodaje plik do bazy, pomocnicza dla addToLibAndDb
 
     static addToDb(element, collectionId, callback) {
-        console.log("Jestem w add to DB")
+        //console.log("Jestem w add to DB")
         var fileLocalPath = element.local
         var fileSysPath = element.filesys
         var checksum = element.checksum
@@ -132,10 +132,10 @@ class IO {
         var index = fileName.lastIndexOf('.')
 
         fileName = fileName.slice(0, index)
-        console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
+        //console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
 
         this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function (fileID) {
-            console.log('Dzialam2')
+            //console.log('Dzialam2')
             callback(fileID)
         })
     }
@@ -145,12 +145,12 @@ class IO {
     static createDir(path) {
         try {
             var stats = fs.lstatSync(path)
-            console.log("Katalog " + path + " już istnieje")
+            //console.log("Katalog " + path + " już istnieje")
         }
         catch (e) {
             if (e.code === 'ENOENT') {
                 fs.mkdirSync(path)
-                console.log("Stworzono katalog: " + path)
+                //console.log("Stworzono katalog: " + path)
             }
             else {
                 throw e
@@ -160,7 +160,7 @@ class IO {
 // Utwórz sumę kontrolną MD5 dla podanego pliku.
 
     static createChecksum (fpath, callback) {
-        console.log ('Tworze checksum')
+        //console.log ('Tworze checksum')
         fpath = fpath.toString()
         var checksum = crypto.createHash('md5')
         var rs = fs.createReadStream(fpath)
@@ -175,23 +175,23 @@ class IO {
     static addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, callback) {
             DatabaseOperation.File.CreateFile(null, fileName, checksum, function addFileId() {
                 var fileId = this.lastID
-                console.log("Jestem w create file " + "F_ID: " + fileId + " Sciezka: " + fileLocalPath)
+                //console.log("Jestem w create file " + "F_ID: " + fileId + " Sciezka: " + fileLocalPath)
                 DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
                     var locationId = this.lastID
-                    console.log("Jestem w create location typ:local " + "L_ID:" + locationId + " FileID: " + fileId)
+                    //console.log("Jestem w create location typ:local " + "L_ID:" + locationId + " FileID: " + fileId)
                     DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {
-                        console.log("Skonczylem dodawać do F_L lokalną sciezkę")
+                        //console.log("Skonczylem dodawać do F_L lokalną sciezkę")
                     })
                 })
                 DatabaseOperation.Location.CreateLocation("global", fileSysPath, function addLocationId() {
                     var locationId2 = this.lastID
                     watcher.startSingleWatch(locationId2)
-                    console.log("Jestem w create location typ:global " + "L_ID: " + locationId2 + " F_ID: " + fileId)
+                    //console.log("Jestem w create location typ:global " + "L_ID: " + locationId2 + " F_ID: " + fileId)
                     DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId2, function () {
-                        console.log("Skonczylem dodawać do F_L globalną scieżkę")
+                        //console.log("Skonczylem dodawać do F_L globalną scieżkę")
                     })
                 })
-                console.log('Dzialam1')
+                //console.log('Dzialam1')
                 DatabaseOperation.File_Collection.CreateFile_Collection(fileId, collectionId)
                 callback(fileId)
             })
@@ -203,16 +203,16 @@ class IO {
         var result = {}
         let self = this
         self.createChecksum(filePath, function compareFiles(checksum) {
-            console.log("Stworzyłem checksum: " + checksum)
+            //console.log("Stworzyłem checksum: " + checksum)
             result.checksum = checksum
             var fileChecksum = checksum
             if (fs.existsSync(pathInLib)) {
-                console.log(pathInLib + " już jest w bibliotece")
+                //console.log(pathInLib + " już jest w bibliotece")
                 var baseN = path.basename(filePath, ".pdf").toString()
                 var ovPath = overwritePath + "/" + baseN
                 DatabaseOperation.File.GetAllFiles(baseN, null, null, function comp (err, rows) {
                     if (rows.filter(function(element) { return element.Checksum === fileChecksum}).length < 1) {
-                        console.log("Chekcsum są różne")
+                        //console.log("Chekcsum są różne")
                         fs.mkdir(ovPath, function handleMk(err) {
                             self.addToOverwrite(err, result, filePath, ovPath, baseN, callback)
                         })
@@ -222,9 +222,9 @@ class IO {
                 })
 
             } else {
-                console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
+                //console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
                 self.copyFile(filePath, pathInLib)
-                console.log("Liczba Piotra: " + 1)
+                //console.log("Liczba Piotra: " + 1)
                 createResult(result, filePath, pathInLib, "unique", function sendResult(resultObj) {
                     callback && callback(resultObj)
                 })
@@ -249,10 +249,10 @@ class IO {
                 fs.unlink(path, function (err) {
                     if (err) {
                         alert("An error ocurred updating the file" + err.message)
-                        console.log(err);
+                        //console.log(err);
                         return
                     }
-                    console.log("File succesfully deleted")
+                    //console.log("File succesfully deleted")
                     callback()
                 })
             } else {
@@ -275,7 +275,7 @@ class IO {
         if (err) {
             if (err.code === "EEXIST") {
                 fs.readdir(ovPath, function getFolders(err, files) {
-                    console.log("Katalog o nazwie" + ovPath + "jest już utworzony w overwrite")
+                    //console.log("Katalog o nazwie" + ovPath + "jest już utworzony w overwrite")
                     createOvFilePath(ovPath, baseN, files, function (newPath){
                         fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
                         createResult(result, filePath, newPath, "overwrite", function sendResult(resultObj) {
@@ -285,7 +285,7 @@ class IO {
                 })
             }
         } else {
-            console.log("Katalog o nazwie" + ovPath + "zostanie utworzony w overwrite")
+            //console.log("Katalog o nazwie" + ovPath + "zostanie utworzony w overwrite")
             var newPath = ovPath + "/" + baseN + "__1" + ".pdf"
             fs.createReadStream(filePath).pipe(fs.createWriteStream(newPath))
             createResult(result, filePath, newPath, "overwrite", function sendResult(resultObj) {

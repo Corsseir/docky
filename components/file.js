@@ -7,6 +7,7 @@ const {Database, DatabaseOperation} = require('../libs/database.js')
 const {IO} = require('../libs/io.js')
 const {Tag} = require('./tag.js')
 const {Location} = require('./location.js')
+const fs = require ('fs')
 
 class File {
     get(fileID, callback) {
@@ -19,23 +20,27 @@ class File {
     }
 
     add(data, callback) {
-        IO.addToLibAndDb([data.path], data.parent, function (result) {
-            if(result.status === 'success') {
-                DatabaseOperation.File.GetFile(result.fileID, function (err, file) {
-                    result['file'] = file
-                    if(data.tag.length !== 0) {
-                        data['id'] = file.ID_File
-                        new Tag().add(data, function () {
+        if(fs.existsSync(data.path)) {
+            IO.addToLibAndDb([data.path], data.parent, function (result) {
+                if (result.status === 'success') {
+                    DatabaseOperation.File.GetFile(result.fileID, function (err, file) {
+                        result['file'] = file
+                        if (data.tag.length !== 0) {
+                            data['id'] = file.ID_File
+                            new Tag().add(data, function () {
+                                callback && callback(result)
+                            })
+                        } else {
                             callback && callback(result)
-                        })
-                    } else {
-                        callback && callback(result)
-                    }
-                })
-            } else {
-                callback && callback(result)
-            }
-        })
+                        }
+                    })
+                } else {
+                    callback && callback(result)
+                }
+            })
+        } else {
+            callback && callback({'status': 'not_exist'})
+        }
     }
 
     edit(data, callback) {
