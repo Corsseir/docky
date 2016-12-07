@@ -14,11 +14,8 @@ const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
 
 let path = require('path')
-let crypto = require('crypto')
-let archiver = require('archiver')
 let pdfOpener = require('./pdfOpener.js').PDFopener
-let watcher = require('./fileWatcher.js').FileWatcher
-
+let adder = require('./addFile.js').AddFile
 
 class IO {
     //funkcja przeznaczona do pierwszego uruchomienia
@@ -27,7 +24,6 @@ class IO {
         this.createDir(libraryMain)
         this.createDir(libraryPath)
         this.createDir(overwritePath)
-        watcher.startWatch()
     }
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
@@ -71,31 +67,30 @@ class IO {
         }
     }
 
+    static inSeqAdd (x, len, pdfs, self, collectionId, callback){
+        console.log('inSeqAdd ' + x)
+        let fid = 0
+        if( x < len ) {
+            adder.addFile(pdfs[x], collectionId, null,  function(fileID) {
+                console.log("Dodałem " + fileID)
+                fid = fileID
+                self.inSeqAdd(x+1, len, pdfs, self, collectionId, callback)
+            })
+        }
+        else {
+            callback({
+                'status': 'success',
+                'fileID': fid
+            })
+        }
+    }
+
     //Dodaje dowolną liczbę plików do lib i db, input to tablica
     static addToLibAndDb(pdfsO, collectionId, callback) {
         let self = this
         self.checkForUrl(pdfsO, function (pdfs) {
-            for (let i = 0; i < pdfs.length; i++) {
-                var element = pdfs[i]
-                //console.log("addToLibAndDb Element: " + element + "Collection id: " + collectionId)
-                var fName = path.basename(element).toString()
-                var pathInLib = libraryPath + "/" + fName
-                self.addFile(pathInLib, element, function (result) {
-                    if(typeof result.status === 'undefined') {
-                        //console.log("Obiekt result: " + result.local + " , " + result.type)
-                        self.addToDb(result, collectionId, function (fileID) {
-                            if(i === pdfs.length - 1) {
-                                callback({
-                                    'status': 'success',
-                                    'fileID': fileID
-                                })
-                            }
-                        })
-                    } else {
-                        callback(result)
-                    }
-                })
-            }
+            let len = pdfs.length
+            self.inSeqAdd(0, len, pdfs, self, collectionId, callback)
         })
 
     }
@@ -107,7 +102,6 @@ class IO {
             if(rows.length === 0) {
                 DatabaseOperation.Collection.CreateCollection("Zeskanowane", 1, function () {
                     var collectionId = this.lastID
-
                     self.addToLibAndDb(pdfs, collectionId, function () {
                         callback && callback(collectionId)
                     })
@@ -121,27 +115,8 @@ class IO {
         })
     }
 
-    //Dodaje plik do bazy, pomocnicza dla addToLibAndDb
-
-    static addToDb(element, collectionId, callback) {
-        //console.log("Jestem w add to DB")
-        var fileLocalPath = element.local
-        var fileSysPath = element.filesys
-        var checksum = element.checksum
-        var fileName = path.basename(element.filesys).toString()
-        var index = fileName.lastIndexOf('.')
-
-        fileName = fileName.slice(0, index)
-        //console.log("addToDb: collection id: " + collectionId + " file name: " + fileName)
-
-        this.addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, function (fileID) {
-            //console.log('Dzialam2')
-            callback(fileID)
-        })
-    }
 
     //Utwórz katalog w wybranej ścieżce (synchroniczna)
-
     static createDir(path) {
         try {
             var stats = fs.lstatSync(path)
@@ -156,81 +131,6 @@ class IO {
                 throw e
             }
         }
-    }
-// Utwórz sumę kontrolną MD5 dla podanego pliku.
-
-    static createChecksum (fpath, callback) {
-        //console.log ('Tworze checksum')
-        fpath = fpath.toString()
-        var checksum = crypto.createHash('md5')
-        var rs = fs.createReadStream(fpath)
-        fs.readFile(fpath, function hashFile(err, data) {
-            checksum.update(data, 'utf8')
-            callback && callback(checksum.digest('hex'))
-        })
-    }
-
-    //funkcja pomocnicza dla addAlltoDb
-
-    static addEntryToDb(fileName, fileLocalPath, fileSysPath, checksum, collectionId, callback) {
-            DatabaseOperation.File.CreateFile(null, fileName, checksum, function addFileId() {
-                var fileId = this.lastID
-                //console.log("Jestem w create file " + "F_ID: " + fileId + " Sciezka: " + fileLocalPath)
-                DatabaseOperation.Location.CreateLocation("local", fileLocalPath, function addLocationId() {
-                    var locationId = this.lastID
-                    //console.log("Jestem w create location typ:local " + "L_ID:" + locationId + " FileID: " + fileId)
-                    DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId, function () {
-                        //console.log("Skonczylem dodawać do F_L lokalną sciezkę")
-                    })
-                })
-                DatabaseOperation.Location.CreateLocation("global", fileSysPath, function addLocationId() {
-                    var locationId2 = this.lastID
-                    watcher.startSingleWatch(locationId2)
-                    //console.log("Jestem w create location typ:global " + "L_ID: " + locationId2 + " F_ID: " + fileId)
-                    DatabaseOperation.File_Location.CreateFile_Location(fileId, locationId2, function () {
-                        //console.log("Skonczylem dodawać do F_L globalną scieżkę")
-                    })
-                })
-                //console.log('Dzialam1')
-                DatabaseOperation.File_Collection.CreateFile_Collection(fileId, collectionId)
-                callback(fileId)
-            })
-
-    }
-
-
-    static addFile(pathInLib, filePath, callback){
-        var result = {}
-        let self = this
-        self.createChecksum(filePath, function compareFiles(checksum) {
-            //console.log("Stworzyłem checksum: " + checksum)
-            result.checksum = checksum
-            var fileChecksum = checksum
-            if (fs.existsSync(pathInLib)) {
-                //console.log(pathInLib + " już jest w bibliotece")
-                var baseN = path.basename(filePath, ".pdf").toString()
-                var ovPath = overwritePath + "/" + baseN
-                DatabaseOperation.File.GetAllFiles(baseN, null, null, function comp (err, rows) {
-                    if (rows.filter(function(element) { return element.Checksum === fileChecksum}).length < 1) {
-                        //console.log("Chekcsum są różne")
-                        fs.mkdir(ovPath, function handleMk(err) {
-                            self.addToOverwrite(err, result, filePath, ovPath, baseN, callback)
-                        })
-                    } else {
-                        callback && callback({'status': 'exist', 'name': baseN})
-                    }
-                })
-
-            } else {
-                //console.log("Pliku o sciezce: " + pathInLib + " nie ma w bibliotece. Kopiowanie rozp.")
-                self.copyFile(filePath, pathInLib)
-                //console.log("Liczba Piotra: " + 1)
-                createResult(result, filePath, pathInLib, "unique", function sendResult(resultObj) {
-                    callback && callback(resultObj)
-                })
-            }
-        })
-
     }
 
     static copyFile(source, destination, callback) {
@@ -259,16 +159,6 @@ class IO {
                 alert("This file doesn't exist, cannot delete")
             }
         });
-    }
-
-    static exportToZip(pArray) {
-        let zip = fs.createWriteStream('export.zip')
-        let zipper = archiver('zip')
-        zipper.pipe(zip)
-        for (let i = 0; i < pArray.length; i++){
-            zipper.append(fs.createReadStream(pArray[i]), { name: path.basename(pArray[i]).toString() })
-        }
-        zipper.finalize()
     }
 
     static addToOverwrite(err, result, filePath, ovPath, baseN, callback){

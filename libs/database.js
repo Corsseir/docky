@@ -198,7 +198,8 @@ DatabaseOperation.File = class File
     //Filename, Path, Url, Date, Checksum,
     static CreateFile(Filename, Path, Url, Date, Checksum, Callback)
     {
-        Database.run('INSERT INTO File (Filename, Path, Url, Date, Checksum) VALUES ($Filename, $Path, $Url, $Date, $Checksum)', {$Filename: Filename, $Path: Path, $Url: Url, $Date: Date, $Checksum: Checksum}, Callback)
+        Database.run('INSERT INTO File (Filename, Path, Url, Date, Checksum) VALUES ($Filename, $Path, $Url, $Date, $Checksum)',
+            {$Filename: Filename, $Path: Path, $Url: Url, $Date: Date, $Checksum: Checksum}, Callback)
     }
 
     // The signature of the callback is function(err, row) {}
@@ -379,6 +380,31 @@ DatabaseOperation.File_Collection = class File_Collection
     }
 }
 
+DatabaseOperation.MultiInsert = class MultiInsert {
+    static InsertAllInfo (ID_Collection, fileInfo, tags, callback) {
+        Database.serialize(()=> {
+            Database.exec(
+                'BEGIN;' +
+                'INSERT INTO File (Filename, Path, Url, Date, Checksum) VALUES (' + '"' +  fileInfo.Filename.toString() + '","' + fileInfo.Path.toString() + '","' + fileInfo.Url.toString() + '","' + fileInfo.Date.toString() + '","' + fileInfo.Checksum.toString() + '");'+
+                'INSERT INTO File_Collection (ID_File, ID_Collection) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"),' +  ID_Collection  + ');'+
+                'INSERT INTO Tag (Name, Value) VALUES ("Autor", '+ '"' +tags.Autor.toString()+ '"' + ");"+
+                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT seq FROM sqlite_sequence where name="Tag"));' +
+                'INSERT INTO Tag (Name, Value) VALUES ("Tytuł",'+ '"' +tags.Tytul.toString()+ '"' + ');'+
+                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT seq FROM sqlite_sequence where name="Tag"));' +
+                'COMMIT;'
+                , (err)=> {
+                    if (err){
+                        console.log(err.message)
+                    } else {
+                        Database.get('select seq from sqlite_sequence where name="File"', (err, row)=> {
+                            callback(row.seq)
+                        })
+                    }
+                })
+        })
+    }
+}
+
 exports.Database = Database;
 exports.DatabaseOperation = DatabaseOperation;
 
@@ -389,3 +415,4 @@ function ErrorCallback(err)
         console.log(err.message);
     }
 }
+
