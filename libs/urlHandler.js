@@ -7,6 +7,7 @@ let https = require('https')
 let fs = require('fs')
 let crypto = require('crypto')
 let temp = require('os').tmpdir()
+let path = require('path')
 
 class URLHandler {
 
@@ -14,11 +15,10 @@ class URLHandler {
         download(url, function (fname) {
             let file = []
             if (fname != ''){
-                file.push(fname)
+                callback && callback(null, fname)
             } else {
                 callback && callback('get error', [])
             }
-            callback && callback(null, file)
         })
     }
 
@@ -63,7 +63,9 @@ function download(url, callback) {
     let parts = url.split('/')
     let parts2 = parts[parts.length - 1].split('.')
     //console.log(temp)
-    let fname =  temp + '/'  + parts2[0] + '.pdf'
+    let fname = path.join(temp, parts2[0] + '.pdf')
+    //let fname =  temp + '/'  + parts2[0] + '.pdf'
+    //fname = fname.toString()
     let pdf = fs.createWriteStream(fname)
 
     if (url.substring(0,5) ==='https') {

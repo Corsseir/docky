@@ -8,6 +8,7 @@ const path = require ('path')
 const Database = require('./database.js').Database
 const DO = require('./database.js').DatabaseOperation
 let checksum = require('./checksum.js').ChecksumCreator
+const urlHandler = require('./urlHandler.js').URLHandler
 //other
 //const {PDFJS} = require('../libs/pdf.js')
 //consts
@@ -17,21 +18,34 @@ const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
 
 class AddFile {
 
-    static addFile(fpath, collectionId, url, callback){
+    static addFile(fpath, collectionId, callback){
         fpath = fpath.toString()
-        console.log('addFile ' + fpath)
-        AddFileHelper.copyFileToLib(fpath, (err, fileInfo) => {
+
+        if (fpath.substring(0,4) ==='http' || fpath.substring(0,5) ==='https') {
+            urlHandler.downloadFile(fpath, (err, path) => {
+                if (err) {
+                    callback && callback(err, null)
+                } else {
+                    this.libAndDb(path, fpath, collectionId, callback)
+                }
+            })
+        } else {
+            this.libAndDb(fpath, '', collectionId, callback)
+        }
+
+    }
+
+    static libAndDb(fpath, url, collectionId, callback){
+        AddFileHelper.copyFileToLib(fpath,  (err, fileInfo) => {
             if (err){
-                console.log('Err '+err)
-                callback(err)
+                callback(err, null)
             } else {
                 let currentDate = new Date ()
                 fileInfo.Date = currentDate.toDateString()
                 fileInfo.Url = url
-                if (url === null) {fileInfo.Url = ''}
                 let tags = {"Autor":"A", "Tytul":"T"}
                 DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, tags, (fid) => {
-                    callback && callback(fid)
+                    callback(null, fid)
                 })
             }
         })
@@ -44,7 +58,7 @@ class AddFileHelper {
 
     static copyFileToLib (fpath, callback) {
         //console.log('copy ' + fpath)
-        let filename = path.basename(fpath, ".pdf").toString()
+        let filename = path.basename(fpath, ".pdf")
         checksum.create(fpath, (err, checksum) =>{
             DO.File.GetAllFiles(null, null, null, (err, rows) => {
                 if (err){

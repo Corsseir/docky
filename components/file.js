@@ -20,7 +20,7 @@ class File {
     }
 
     add(data, callback) {
-        if(fs.existsSync(data.path)) {
+        if(fs.existsSync(data.path) || data.path.substring(0,4) ==='http') {
             IO.addToLibAndDb([data.path], data.parent, function (result) {
                 if (result.status === 'success') {
                     DatabaseOperation.File.GetFile(result.fileID, function (err, file) {

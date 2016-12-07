@@ -49,29 +49,11 @@ class IO {
         }
     }
 
-    //Sprawdza czy wprowadzono url
-    static checkForUrl(pdfs, callback) {
-        //console.log(pdfs)
-        if (pdfs.length === 1) {
-            if (pdfs[0].substring(0,5) ==='https' || pdfs[0].substring(0,4) ==='http') {
-                url.downloadFile(pdfs[0], function (file){
-                    //console.log(file[0])
-                    pdfs[0] = file[0]
-                    callback && callback(pdfs)
-                })
-            } else {
-                callback && callback(pdfs)
-            }
-        } else {
-            callback && callback(pdfs)
-        }
-    }
-
     static inSeqAdd (x, len, pdfs, self, collectionId, callback){
         console.log('inSeqAdd ' + x)
         let fid = 0
         if( x < len ) {
-            adder.addFile(pdfs[x], collectionId, null,  function(fileID) {
+            adder.addFile(pdfs[x], collectionId, function(err, fileID) {
                 console.log("Dodałem " + fileID)
                 fid = fileID
                 self.inSeqAdd(x+1, len, pdfs, self, collectionId, callback)
@@ -86,13 +68,10 @@ class IO {
     }
 
     //Dodaje dowolną liczbę plików do lib i db, input to tablica
-    static addToLibAndDb(pdfsO, collectionId, callback) {
+    static addToLibAndDb(pdfs, collectionId, callback) {
         let self = this
-        self.checkForUrl(pdfsO, function (pdfs) {
-            let len = pdfs.length
-            self.inSeqAdd(0, len, pdfs, self, collectionId, callback)
-        })
-
+        let len = pdfs.length
+        self.inSeqAdd(0, len, pdfs, self, collectionId, callback)
     }
 
     static addToLibAndDbFromScan(pdfs, callback) {
