@@ -49,21 +49,29 @@ class IO {
         }
     }
 
-    static inSeqAdd (x, len, pdfs, self, collectionId, callback){
-        console.log('inSeqAdd ' + x)
-        let fid = 0
+    static inSeqAdd (x, len, pdfs, self, collectionId, fileObj, callback){
         if( x < len ) {
-            adder.addFile(pdfs[x], collectionId, function(err, fileID) {
-                console.log("Dodałem " + fileID)
-                fid = fileID
-                self.inSeqAdd(x+1, len, pdfs, self, collectionId, callback)
+            adder.addFile(pdfs[x], collectionId, function(result) {
+                if (result.status === 'success'){
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result.file, callback)
+                } else {
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, {}, callback)
+                }
             })
         }
         else {
-            callback({
-                'status': 'success',
-                'fileID': fid
-            })
+            if (len === 1){
+                callback({
+                    'status': 'success',
+                    'file': fileObj
+                })
+
+            } else {
+                callback({
+                    'status': 'success',
+                    'count': len
+                })
+            }
         }
     }
 
@@ -71,7 +79,7 @@ class IO {
     static addToLibAndDb(pdfs, collectionId, callback) {
         let self = this
         let len = pdfs.length
-        self.inSeqAdd(0, len, pdfs, self, collectionId, callback)
+        self.inSeqAdd(0, len, pdfs, self, collectionId, {}, callback)
     }
 
     static addToLibAndDbFromScan(pdfs, callback) {

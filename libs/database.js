@@ -394,10 +394,15 @@ DatabaseOperation.MultiInsert = class MultiInsert {
                 'COMMIT;'
                 , (err)=> {
                     if (err){
-                        console.log(err.message)
+                        callback(err)
                     } else {
                         Database.get('select seq from sqlite_sequence where name="File"', (err, row)=> {
-                            callback(row.seq)
+                            if (err) {
+                                callback(err, row.seq)
+                            } else {
+                                callback(null, row.seq)
+                            }
+
                         })
                     }
                 })

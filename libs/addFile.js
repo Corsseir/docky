@@ -24,7 +24,7 @@ class AddFile {
         if (fpath.substring(0,4) ==='http' || fpath.substring(0,5) ==='https') {
             urlHandler.downloadFile(fpath, (err, path) => {
                 if (err) {
-                    callback && callback(err, null)
+                    callback && callback({'status': 'error', 'file': err})
                 } else {
                     this.libAndDb(path, fpath, collectionId, callback)
                 }
@@ -38,14 +38,16 @@ class AddFile {
     static libAndDb(fpath, url, collectionId, callback){
         AddFileHelper.copyFileToLib(fpath,  (err, fileInfo) => {
             if (err){
-                callback(err, null)
+                callback({'status': 'error', 'file': err})
             } else {
                 let currentDate = new Date ()
                 fileInfo.Date = currentDate.toDateString()
                 fileInfo.Url = url
                 let tags = {"Autor":"A", "Tytul":"T"}
-                DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, tags, (fid) => {
-                    callback(null, fid)
+                DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, tags, (err, fid) => {
+                    fileInfo.ID_File = fid
+                    fileInfo.tags = tags
+                    callback && callback({'status': 'success', 'file': fileInfo})
                 })
             }
         })
@@ -68,7 +70,7 @@ class AddFileHelper {
                     if (checksumInDb.length < 1) {
                         PathHanlder.resolvePath(fpath, rows, (finalpath) => {
                             if (finalpath === fpath){
-                                callback && callback ({'status': 'mkdirerr', 'name': filename}, null)
+                                callback && callback ({'status': 'error', 'name': 'mkdir err'}, null)
                             } else {
                                 //console.log('resolved' + fpath)
                                 PathHanlder.copyFile(fpath, finalpath, ()=> {
@@ -79,16 +81,13 @@ class AddFileHelper {
                             }
                         })
                     } else {
-                        callback && callback({'status': 'exist', 'name': filename}, null)
+                        callback && callback({'status': 'exist', 'file': checksumInDb[0]}, null)
                     }
                 }
             })
         })
     }
 
-/*    static getMetadata(fpath){
-        console.log('meta')
-    }*/
 }
 
 class PathHanlder {
