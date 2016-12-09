@@ -43,10 +43,8 @@ class AddFile {
                 let currentDate = new Date ()
                 fileInfo.Date = currentDate.toDateString()
                 fileInfo.Url = url
-                let tags = {"Autor":"A", "Tytul":"T"}
-                DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, tags, (err, fid) => {
+                DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, (err, fid) => {
                     fileInfo.ID_File = fid
-                    fileInfo.tags = tags
                     callback && callback({'status': 'success', 'file': fileInfo})
                 })
             }

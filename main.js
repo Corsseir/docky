@@ -8,6 +8,7 @@ const {Dialog} = require('./helpers/dialog.js')
 const {Search} = require('./libs/search.js')
 const {IO} = require('./libs/io.js')
 const {Database, DatabaseOperation} = require('./libs/database.js')
+const menu = require('./libs/menu.js')
 
 let mainWindow
 
