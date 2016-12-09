@@ -12,10 +12,10 @@ class PDFViewer {
     constructor() {
         var self = this
         var fileID = $('#start-page').data('file-id')
-        var location = ipcRenderer.sendSync('getLocation', {'fileID': fileID})
+        var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
 
-        self.init(location.local.path, 1)
-        $('#start-page').data('location', location.local.path)
+        self.init(data.file.Path, 1)
+        $('#start-page').data('location', data.file.Path)
         $(document).on('click', '#page-previous', function (event) {
             self.handleClickPager(event, self)
         })

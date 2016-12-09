@@ -26,15 +26,11 @@ class File {
                 if (result.status === 'success') {
                     DatabaseOperation.File.GetFile(result.file.ID_File, function (err, file) {
                         result['formFile'] = file
-                        if (data.tag !== '') {
-                            result['formTag'] = data.tag
+                        result['formTag'] = data.tag
 
-                            new Tag().add(result, function () {
-                                callback && callback(result)
-                            })
-                        } else {
+                        new Tag().add(result, function () {
                             callback && callback(result)
-                        }
+                        })
                     })
                 } else {
                     callback && callback(result)
