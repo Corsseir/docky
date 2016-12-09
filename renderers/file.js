@@ -59,15 +59,16 @@ class File {
                         if (result.status === 'success') {
                             notify.hide()
                             new Tree().addFile(result.file)
-                        } else if (result.file.status === 'exist') {
-                            console.log(result)
-                            notify.hide(function () {
-                                notify.show('Plik istnieje już w bazie danych pod nazwą \'' + result.file.file.Filename + '\'', 3000)
-                            })
                         } else if (result.status === 'not_exist') {
                             notify.hide(function () {
                                 notify.show('Wskazany plik nie istnieje', 3000)
                             })
+                        } else if (typeof result.file !== 'undefined') {
+                            if(result.file.status === 'exist') {
+                                notify.hide(function () {
+                                    notify.show('Plik istnieje już w bazie danych pod nazwą \'' + result.file.file.Filename + '\'', 3000)
+                                })
+                            }
                         }
                     })
                 }
