@@ -147,7 +147,7 @@ class IO {
         var self = this
         var oldLocation = file.Path
 
-        if(oldLocation.length !== 0) {
+        if(oldLocation !== '') {
             var baseN = path.basename(oldLocation, '.pdf').toString()
             var firstIndex = oldLocation.indexOf('Overwrite')
             var lastIndex

@@ -26,7 +26,7 @@ class File {
                 if (result.status === 'success') {
                     DatabaseOperation.File.GetFile(result.file.ID_File, function (err, file) {
                         result['formFile'] = file
-                        if (data.tag.length !== 0 || result.tags.length !== 0) {
+                        if (data.tag !== '') {
                             result['formTag'] = data.tag
 
                             new Tag().add(result, function () {
