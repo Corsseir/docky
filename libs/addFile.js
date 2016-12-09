@@ -10,7 +10,7 @@ const DO = require('./database.js').DatabaseOperation
 let checksum = require('./checksum.js').ChecksumCreator
 const urlHandler = require('./urlHandler.js').URLHandler
 //other
-const {PDFJS} = require('./pdf.js')
+
 //consts
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
