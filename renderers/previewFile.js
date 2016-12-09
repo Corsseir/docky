@@ -11,7 +11,7 @@ let scrollbarWidth = 15
 class PDFViewer {
     constructor() {
         var self = this
-        var fileID = $('#start-page').data('file-id')
+        var fileID = $('#file-id').text()
         var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
 
         self.init(data.file.Path, 1)

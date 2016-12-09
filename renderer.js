@@ -480,7 +480,7 @@ class File {
             section.find('#info-checksum').append(data.file.Checksum)
             data = ipcRenderer.sendSync('getTags', {'fileID': fileID})
             section.find('#info-tag').append(data.tag.sort().join(' '))
-            section.find('#start-page').data('file-id', fileID)
+            section.find('#file-id').append(fileID)
 
             new Section().render(section, false)
         } else if (event.which === 3) {

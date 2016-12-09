@@ -19,21 +19,21 @@ class Info {
 
     handlePreviewClick(event) {
         var section = new Import().getTemplate('#link-section-preview-file', '#section-preview-file')
-        section.find('#start-page').data('file-id', $('#start-page').data('file-id'))
+        section.find('#file-id').append($('#file-id').text())
         new Section().render(section, false, function () {
             new PDFViewer()
         })
     }
 
     handleEditClick(event) {
-        new File().edit($('#start-page').data('file-id'))
+        new File().edit($('#file-id').text())
     }
 
     handleOpenClick(event) {
-        var fileID = $('#start-page').data('file-id')
-        var location = ipcRenderer.sendSync('getLocation', {'fileID': fileID})
+        var fileID = $('#file-id').text()
+        var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
 
-        PDFOpener.open(location.local.path)
+        PDFOpener.open(data.file.Path)
     }
 }
 
