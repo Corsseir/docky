@@ -19,7 +19,7 @@ class Tag {
                 Database.serialize(function () {
                     fileTags.forEach(function (fileTag) {
                         DatabaseOperation.Tag.GetTag(fileTag.ID_Tag, function (err, tag) {
-                            data['tag'].push(tag.Value)
+                            data['tag'].push(tag.Name + ':' + tag.Value)
                             i++
 
                             if (i === quantity) {
@@ -61,22 +61,25 @@ class Tag {
     add(data, callback) {
         var self = this
 
-        if(data.tag !== '') {
-            var tags = data.tag.split(' ')
+        if(data.formTag !== '') {
+            var tags = data.formTag.split(' ')
             var i = 0
 
             self.unique(tags, function (result) {
                 var quantity = result.length
 
                 result.forEach(function (tag) {
+                    var key = tag.split(':')[0]
+                    var value = tag.split(':')[1]
+
                     Database.serialize(function () {
-                        DatabaseOperation.Tag.GetAllTags(null, tag, null, null, function (err, tags) {
+                        DatabaseOperation.Tag.GetAllTags(key, value, null, null, function (err, tags) {
                             Database.serialize(function () {
                                 if (tags.length === 1) {
-                                    DatabaseOperation.File_Tag.CreateFile_Tag(data.id, tags[0].ID_Tag)
+                                    DatabaseOperation.File_Tag.CreateFile_Tag(data.file.ID_File, tags[0].ID_Tag)
                                 } else if (tags.length === 0) {
-                                    DatabaseOperation.Tag.CreateTag('Tag', tag, function () {
-                                        DatabaseOperation.File_Tag.CreateFile_Tag(data.id, this.lastID)
+                                    DatabaseOperation.Tag.CreateTag(key, value, function () {
+                                        DatabaseOperation.File_Tag.CreateFile_Tag(data.file.ID_File, this.lastID)
                                     })
                                 }
 

@@ -125,9 +125,57 @@ class IO {
         callback && callback()
     }
 
-    static editFile(previousLocation, newLocation, callback) {
-        fs.rename(previousLocation, newLocation)
-        callback && callback()
+    static editFile(data, file, callback) {
+        var self = this
+        var oldLocation = file.Path
+
+        if(oldLocation.length !== 0) {
+            var baseN = path.basename(oldLocation, '.pdf').toString()
+            var firstIndex = oldLocation.indexOf('Overwrite')
+            var lastIndex
+            var overwrite = firstIndex
+            var part
+            var newLocation
+
+            if(firstIndex !== -1) {
+                lastIndex = oldLocation.lastIndexOf(baseN)
+                part = oldLocation.slice(firstIndex, lastIndex)
+                oldLocation = oldLocation.replace(part, '')
+                firstIndex = oldLocation.lastIndexOf('__')
+                lastIndex = oldLocation.lastIndexOf('.')
+                part = oldLocation.slice(firstIndex, lastIndex)
+                oldLocation = oldLocation.replace(part, '')
+            }
+
+            newLocation = oldLocation.replace(file.Filename, data.name)
+
+            if (fs.existsSync(newLocation)) {
+                var ovPath
+
+                baseN = path.basename(newLocation, ".pdf").toString()
+                ovPath = './DockyLibrary/Zeskanowane/Overwrite/' + baseN
+                fs.mkdir(ovPath, function(err) {
+                    self.addToOverwrite(err, {}, file.Path, ovPath, baseN, function (result) {
+                        self.removeFile(file.Path, function () {
+                            callback && callback(result.local)
+                        })
+                    })
+                })
+            } else {
+                if(overwrite !== -1) {
+                    self.copyFile(file.Path, newLocation, function () {
+                        self.removeFile(file.Path, function () {
+                            callback && callback(newLocation)
+                        })
+                    })
+                } else {
+                    fs.rename(file.Path, newLocation)
+                    callback && callback(newLocation)
+                }
+            }
+        } else {
+            callback && callback('')
+        }
     }
 
     static removeFile(path, callback) {
@@ -140,7 +188,7 @@ class IO {
                         return
                     }
                     //console.log("File succesfully deleted")
-                    callback()
+                    callback && callback()
                 })
             } else {
                 alert("This file doesn't exist, cannot delete")

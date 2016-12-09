@@ -10,7 +10,7 @@ const DO = require('./database.js').DatabaseOperation
 let checksum = require('./checksum.js').ChecksumCreator
 const urlHandler = require('./urlHandler.js').URLHandler
 //other
-//const {PDFJS} = require('../libs/pdf.js')
+const {PDFJS} = require('./pdf.js')
 //consts
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
@@ -43,10 +43,8 @@ class AddFile {
                 let currentDate = new Date ()
                 fileInfo.Date = currentDate.toDateString()
                 fileInfo.Url = url
-                let tags = {"Autor":"A", "Tytul":"T"}
-                DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, tags, (err, fid) => {
+                DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, (err, fid) => {
                     fileInfo.ID_File = fid
-                    fileInfo.tags = tags
                     callback && callback({'status': 'success', 'file': fileInfo})
                 })
             }

@@ -5,9 +5,10 @@
 const {ipcMain} = require('electron')
 const {Database, DatabaseOperation} = require('../libs/database.js')
 const {IO} = require('../libs/io.js')
+const {AddFile} = require('../libs/addFile.js')
 const {Tag} = require('./tag.js')
 const {Location} = require('./location.js')
-const fs = require ('fs')
+const fs = require('fs')
 
 class File {
     get(fileID, callback) {
@@ -20,14 +21,15 @@ class File {
     }
 
     add(data, callback) {
-        if(fs.existsSync(data.path) || data.path.substring(0,4) ==='http') {
-            IO.addToLibAndDb([data.path], data.parent, function (result) {
+        if (fs.existsSync(data.path) || data.path.substring(0, 4) === 'http') {
+            AddFile.addFile(data.path, data.parent, function (result) {
                 if (result.status === 'success') {
-                    DatabaseOperation.File.GetFile(result.fileID, function (err, file) {
-                        result['file'] = file
-                        if (data.tag.length !== 0) {
-                            data['id'] = file.ID_File
-                            new Tag().add(data, function () {
+                    DatabaseOperation.File.GetFile(result.file.ID_File, function (err, file) {
+                        result['formFile'] = file
+                        if (data.tag.length !== 0 || result.tags.length !== 0) {
+                            result['formTag'] = data.tag
+
+                            new Tag().add(result, function () {
                                 callback && callback(result)
                             })
                         } else {
@@ -47,16 +49,23 @@ class File {
         DatabaseOperation.File.GetFile(data.id, function (err, file) {
             var equal = false
 
-            if(file.Filename === data.name) {
+            if (file.Filename === data.name) {
                 equal = true
             }
 
-            new Location().edit(data, file, equal, function () {
-                new Tag().remove(data.id, function () {
-                    new Tag().add(data, function () {
-                        DatabaseOperation.File.UpdateFile(data.id, file.ID_BLOB, data.name, file.Checksum)
+            new Tag().remove(data.id, function () {
+                data['formTag'] = data.tag
+                data['file'] = file
+
+                new Tag().add(data, function () {
+                    if(!equal) {
+                        IO.editFile(data, file, function (path) {
+                            DatabaseOperation.File.UpdateFile(data.id, data.name, path, file.Url, file.Date, file.Checksum)
+                            callback && callback({'status': 'success'})
+                        })
+                    } else {
                         callback && callback({'status': 'success'})
-                    })
+                    }
                 })
             })
         })
@@ -70,27 +79,15 @@ class File {
         DatabaseOperation.File_Collection.GetAllFile_Collection(fileID, null, null, null, function (err, rows) {
             var quantity = rows.length
 
-            if(quantity === 1 || mode === 'global') {
+            if (quantity === 1 || mode === 'global') {
                 new Tag().remove(fileID, function () {
-                    new Location().remove(fileID, function (paths) {
-                        var quantity = paths.length
-                        var i = 0
-
-                        if(quantity === 0) {
-                            callback && callback({'status': 'success'})
-                        } else {
-                            paths.forEach(function (path) {
-                                IO.removeFile(path, function () {
-                                    DatabaseOperation.File.DeleteFile(fileID)
-                                })
-
-                                i++
-
-                                if(i === quantity) {
-                                    callback && callback({'status': 'success'})
-                                }
-                            })
+                    DatabaseOperation.File.GetFile(fileID, function (err, file) {
+                        if(file.Path.length !== 0) {
+                            IO.removeFile(file.Path)
                         }
+
+                        DatabaseOperation.File.DeleteFile(fileID)
+                        callback && callback({'status': 'success'})
                     })
                 })
             } else {
@@ -102,7 +99,7 @@ class File {
 
     copy(data, callback) {
         DatabaseOperation.File_Collection.GetAllFile_Collection(data.fileID, data.collectionID, null, null, function (err, fileCollections) {
-            if(fileCollections.length === 0) {
+            if (fileCollections.length === 0) {
                 DatabaseOperation.File_Collection.CreateFile_Collection(data.fileID, data.collectionID)
                 callback && callback({'status': 'success'})
             } else {
@@ -113,8 +110,8 @@ class File {
 
     cut(data, callback) {
         console.log(data.previousCollectionID)
-        this.copy(data, function(result) {
-            if(result.status === 'success') {
+        this.copy(data, function (result) {
+            if (result.status === 'success') {
                 DatabaseOperation.File_Collection.DeleteFile_Collection(data.fileID, data.previousCollectionID)
                 callback && callback(result)
             } else {

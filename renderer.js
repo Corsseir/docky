@@ -469,16 +469,17 @@ class File {
             var section = new Import().getTemplate('#link-section-info', '#section-info');
             var fileID = clickedFile.attr('id').split('-')[1]
             var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
-            var location = ipcRenderer.sendSync('getLocation', {'fileID': fileID})
 
             console.log(data)
             console.log(location)
 
             section.find('#info-name').append(data.file.Filename)
+            section.find('#info-path').append(data.file.Path)
+            section.find('#info-url').append(data.file.Url)
+            section.find('#info-date').append(data.file.Date)
+            section.find('#info-checksum').append(data.file.Checksum)
             data = ipcRenderer.sendSync('getTags', {'fileID': fileID})
             section.find('#info-tag').append(data.tag.sort().join(' '))
-            section.find('#info-local').append(location.local.path)
-            section.find('#info-global').append(location.global.path)
             section.find('#start-page').data('file-id', fileID)
 
             new Section().render(section, false)

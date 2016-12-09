@@ -47,51 +47,7 @@ class Location {
             fileLocations.forEach(function (fileLocation) {
                 DatabaseOperation.Location.GetLocation(fileLocation.ID_Location, function (err, location) {
                     if (location.Type === 'local') {
-                        var oldLocation = location.Location
-                        var baseN = path.basename(oldLocation, '.pdf').toString()
-                        var firstIndex = oldLocation.indexOf('Overwrite')
-                        var lastIndex
-                        var overwrite = firstIndex
-                        var part
-                        var newLocation
 
-                        if(firstIndex !== -1) {
-                            lastIndex = oldLocation.lastIndexOf(baseN)
-                            part = oldLocation.slice(firstIndex, lastIndex)
-                            oldLocation = oldLocation.replace(part, '')
-                            firstIndex = oldLocation.lastIndexOf('__')
-                            lastIndex = oldLocation.lastIndexOf('.')
-                            part = oldLocation.slice(firstIndex, lastIndex)
-                            oldLocation = oldLocation.replace(part, '')
-                        }
-
-                        newLocation = oldLocation.replace(file.Filename, data.name)
-
-                        if (fs.existsSync(newLocation)) {
-                            var ovPath
-
-                            baseN = path.basename(newLocation, ".pdf").toString()
-                            ovPath = './DockyLibrary/Zeskanowane/Overwrite/' + baseN
-                            fs.mkdir(ovPath, function(err) {
-                                IO.addToOverwrite(err, {}, location.Location, ovPath, baseN, function (result) {
-                                    IO.removeFile(location.Location, function () {
-                                        callback && callback(result.local, location)
-                                    })
-                                })
-                            })
-                        } else {
-                            if(overwrite !== -1) {
-                                IO.copyFile(location.Location, newLocation, function () {
-                                    IO.removeFile(location.Location, function () {
-                                        callback && callback(newLocation, location)
-                                    })
-                                })
-                            } else {
-                                IO.editFile(location.Location, newLocation, function () {
-                                    callback && callback(newLocation, location)
-                                })
-                            }
-                        }
                     }
                 })
             })
