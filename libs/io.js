@@ -113,7 +113,7 @@ class IO {
                     })
                 })
             } else if(rows.length === 1) {
-                console.log('halo')
+                //console.log('halo')
                 self.addToLibAndDb(pdfs, rows[0].ID_Collection, function (result) {
                     callback && callback(result)
                 })

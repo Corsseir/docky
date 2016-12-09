@@ -1,8 +1,6 @@
 process.chdir('../../../../');
 var IOTrick = '../../../../libs/io.js'
-var URLHandlerTrick = '../../../../libs/urlHandler.js'
 const IO = require(IOTrick).IO
-const URLHandler = require(URLHandlerTrick).URLHandler
 const fs = require('fs')
 const os = require('os')
 const path = require('path');
@@ -17,15 +15,9 @@ function executeCommand(message)
     let argument = message.split(' ')[1]
     if(command === "add")
     {
-        URLHandler.downloadFile(argument, function (err, file)
+        IO.addToLibAndDbFromUrl([argument], function (result)
         {
-            if(err === null)
-            {
-                IO.addToLibAndDbFromScan(file, function ()
-                {
-                    sendMessageToAddon(file)
-                })
-            }
+            sendMessageToAddon(result)
         })
     }
 }
