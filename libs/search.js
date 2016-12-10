@@ -77,6 +77,7 @@ class Search {
                 if (err){
                     callback && callback(err, null)
                 } else {
+                    rows = rows.map(SearchHelper.mapIds)
                     SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
                         let matchingFiles = idFileT.concat(rows)
                         let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
@@ -255,7 +256,7 @@ class SearchQueries {
             tagIds = tagRows.map(SearchHelper.mapTags)
             //console.log("znalazlem " + tagIds.length + " tagow")
             DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
-                //console.log("znalazlem " + ftRows.length + " ftrows")
+               // console.log("znalazlem " + ftRows.length + " ftrows")
                 ftRows.forEach(function (row){
                     let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
                     if ( matchingTags.length >= 1) {
