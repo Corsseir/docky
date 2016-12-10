@@ -322,7 +322,7 @@ class Collection {
                 'z wybranej kolekcji i należących do niej podkolekcji. Czy chcesz kontynuować?')
         }
 
-        new Section().render(section, true)
+        new Section().render(section, false)
     }
 
     remove(data) {
@@ -458,14 +458,14 @@ class File {
                 'Czy chcesz kontynuować?')
         }
 
-        new Section().render(section, true)
+        new Section().render(section, false)
     }
 
     remove(data) {
         var section = new Import().getTemplate('#link-section-default', '#section-default');
 
         new Tree().removeFile(data.mode, data.id)
-        new Section().render(section, false, function () {
+        new Section().render(section, true, function () {
             ipcRenderer.send('removeFile', {'data': {'fileID': data.id, 'collectionID': data.parent, 'mode': data.mode}})
         })
     }
@@ -571,7 +571,7 @@ class Search {
             new Notification().hide(function () {
                 $('#collection-0').children('span').children('i').removeClass('fa-folder-open')
                 $('#collection-0').children('span').children('i').addClass('fa-folder')
-                new Notification().show('Brak wyników wyszukiwania')
+                new Notification().show('Brak wyników wyszukiwania', 3000)
             })
         }
     }
