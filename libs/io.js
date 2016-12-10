@@ -53,19 +53,17 @@ class IO {
         if( x < len ) {
             adder.addFile(pdfs[x], collectionId, function(result) {
                 if (result.status === 'success'){
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result.file, callback)
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
+                } else if (result.status === 'exists'){
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
                 } else {
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, {}, callback)
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
                 }
             })
         }
         else {
             if (len === 1){
-                callback({
-                    'status': 'success',
-                    'file': fileObj
-                })
-
+                callback(fileObj)
             } else {
                 callback({
                     'status': 'success',
@@ -108,13 +106,13 @@ class IO {
             if(rows.length === 0) {
                 DatabaseOperation.Collection.CreateCollection("Pobrane", 1, function () {
                     var collectionId = this.lastID
-                    self.addToLibAndDb(pdfs, collectionId, function (result) {
+                    adder.addFile(pdfs, collectionId, function (result) {
                         callback && callback(result)
                     })
                 })
             } else if(rows.length === 1) {
-                console.log('halo')
-                self.addToLibAndDb(pdfs, rows[0].ID_Collection, function (result) {
+                //console.log('halo')
+                adder.addFile(pdfs, rows[0].ID_Collection, function (result) {
                     callback && callback(result)
                 })
             }

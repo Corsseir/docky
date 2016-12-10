@@ -35,6 +35,128 @@ class Search {
         })
     }
 
+    findAllFileTN(filename, tagname, callback){
+        let results = []
+        let fileIds = []
+        let tagIds = []
+        DatabaseOperation.File.GetAllFiles(filename, null, null, function getFiles(err, fileRows) {
+            fileIds = fileRows.map(SearchHelper.mapIds)
+            //console.log("znalazlem " + fileIds.length + " plikow")
+            //Szukanie tagu o podanej nazwie
+            DatabaseOperation.Tag.GetAllTags(tagname, null, null, null, function getTags(err, tagRows) {
+                tagIds = tagRows.map(SearchHelper.mapTags)
+                //console.log("znalazlem " + tagIds.length + " tagow")
+                DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
+                    //console.log("znalazlem " + ftRows.length + " ftrows")
+                    ftRows.forEach(function (row){
+                        let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
+                        if ( matchingTags.length >= 1) {
+                            results.push(row.ID_File)
+                        }
+                    })
+                    let matchingFiles = results.concat(fileIds)
+                    let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                    callback && callback(ids)
+                })
+            })
+        })
+    }
+
+    findAllFileTNV(filename, tagname, tagvalue, callback){
+        let results = []
+        let fileIds = []
+        let tagIds = []
+        DatabaseOperation.File.GetAllFiles(filename, null, null, function getFiles(err, fileRows) {
+            fileIds = fileRows.map(SearchHelper.mapIds)
+            //console.log("znalazlem " + fileIds.length + " plikow")
+            //Szukanie tagu o podanej nazwie
+            DatabaseOperation.Tag.GetAllTags(tagname, tagvalue, null, null, function getTags(err, tagRows) {
+                tagIds = tagRows.map(SearchHelper.mapTags)
+                //console.log("znalazlem " + tagIds.length + " tagow")
+                DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
+                    //console.log("znalazlem " + ftRows.length + " ftrows")
+                    ftRows.forEach(function (row){
+                        let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
+                        if ( matchingTags.length >= 1) {
+                            results.push(row.ID_File)
+                        }
+                    })
+                    let matchingFiles = results.concat(fileIds)
+                    let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                    callback && callback(ids)
+                })
+            })
+        })
+    }
+
+    findAllTN(tagname, callback){
+        let results = []
+        let tagIds = []
+        //Szukanie tagu o podanej nazwie
+        DatabaseOperation.Tag.GetAllTags(tagname, null, null, null, function getTags(err, tagRows) {
+            tagIds = tagRows.map(SearchHelper.mapTags)
+            //console.log("znalazlem " + tagIds.length + " tagow")
+            DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
+                //console.log("znalazlem " + ftRows.length + " ftrows")
+                ftRows.forEach(function (row){
+                    let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
+                    if ( matchingTags.length >= 1) {
+                        results.push(row.ID_File)
+                    }
+                })
+                let matchingFiles = results
+                let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                callback && callback(ids)
+            })
+        })
+    }
+    findAllTV(tagvalue, callback){
+        let results = []
+        let tagIds = []
+        //Szukanie tagu o podanej nazwie
+        DatabaseOperation.Tag.GetAllTags(null, tagvalue, null, null, function getTags(err, tagRows) {
+            tagIds = tagRows.map(SearchHelper.mapTags)
+            //console.log("znalazlem " + tagIds.length + " tagow")
+            DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
+                //console.log("znalazlem " + ftRows.length + " ftrows")
+                ftRows.forEach(function (row){
+                    let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
+                    if ( matchingTags.length >= 1) {
+                        results.push(row.ID_File)
+                    }
+                })
+                let matchingFiles = results
+                let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                callback && callback(ids)
+            })
+        })
+    }
+
+    findAllTNV(tagname, tagvalue, callback){
+        let results = []
+        let tagIds = []
+        //Szukanie tagu o podanej nazwie
+        DatabaseOperation.Tag.GetAllTags(tagname, tagvalue, null, null, function getTags(err, tagRows) {
+            tagIds = tagRows.map(SearchHelper.mapTags)
+            //console.log("znalazlem " + tagIds.length + " tagow")
+            DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
+                //console.log("znalazlem " + ftRows.length + " ftrows")
+                ftRows.forEach(function (row){
+                    let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
+                    if ( matchingTags.length >= 1) {
+                        results.push(row.ID_File)
+                    }
+                })
+                let matchingFiles = results
+                let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                callback && callback(ids)
+            })
+        })
+    }
+
+
+
+
     constructor() {
         var self = this
 

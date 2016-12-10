@@ -10,7 +10,7 @@ const DO = require('./database.js').DatabaseOperation
 let checksum = require('./checksum.js').ChecksumCreator
 const urlHandler = require('./urlHandler.js').URLHandler
 //other
-const {PDFJS} = require('./pdf.js')
+
 //consts
 const libraryPath = "./DockyLibrary/Zeskanowane"
 const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
@@ -38,10 +38,14 @@ class AddFile {
     static libAndDb(fpath, url, collectionId, callback){
         AddFileHelper.copyFileToLib(fpath,  (err, fileInfo) => {
             if (err){
-                callback({'status': 'error', 'file': err})
+                if (fileInfo){
+                    callback(fileInfo)
+                } else {
+                    callback({'status': 'error', 'file': err})
+                }
             } else {
                 let currentDate = new Date ()
-                fileInfo.Date = currentDate.toDateString()
+                fileInfo.Date = currentDate.toLocaleString()
                 fileInfo.Url = url
                 DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, (err, fid) => {
                     fileInfo.ID_File = fid
@@ -79,7 +83,7 @@ class AddFileHelper {
                             }
                         })
                     } else {
-                        callback && callback({'status': 'exist', 'file': checksumInDb[0]}, null)
+                        callback && callback({'status': 'exist', 'file': checksumInDb[0]}, {'status': 'exist', 'file': checksumInDb[0]})
                     }
                 }
             })
