@@ -54,6 +54,8 @@ class IO {
             adder.addFile(pdfs[x], collectionId, function(result) {
                 if (result.status === 'success'){
                     self.inSeqAdd(x+1, len, pdfs, self, collectionId, result.file, callback)
+                } else if (result.status === 'exists'){
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result.file, callback)
                 } else {
                     self.inSeqAdd(x+1, len, pdfs, self, collectionId, {}, callback)
                 }
