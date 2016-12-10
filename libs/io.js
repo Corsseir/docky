@@ -53,20 +53,17 @@ class IO {
         if( x < len ) {
             adder.addFile(pdfs[x], collectionId, function(result) {
                 if (result.status === 'success'){
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result.file, callback)
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
                 } else if (result.status === 'exists'){
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result.file, callback)
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
                 } else {
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, {}, callback)
+                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
                 }
             })
         }
         else {
             if (len === 1){
-                callback({
-                    'status': 'success',
-                    'file': fileObj
-                })
+                callback(fileObj)
 
             } else {
                 callback({
