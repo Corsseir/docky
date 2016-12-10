@@ -64,9 +64,9 @@ class File {
                                 notify.show('Wskazany plik nie istnieje', 3000)
                             })
                         } else if (typeof result.file !== 'undefined') {
-                            if(result.file.status === 'exist') {
+                            if(result.status === 'exist') {
                                 notify.hide(function () {
-                                    notify.show('Plik istnieje już w bazie danych pod nazwą \'' + result.file.file.Filename + '\'', 3000)
+                                    notify.show('Plik istnieje już w bazie danych pod nazwą \'' + result.file.Filename + '\'', 3000)
                                 })
                             }
                         }

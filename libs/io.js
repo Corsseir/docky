@@ -64,7 +64,6 @@ class IO {
         else {
             if (len === 1){
                 callback(fileObj)
-
             } else {
                 callback({
                     'status': 'success',
@@ -107,13 +106,13 @@ class IO {
             if(rows.length === 0) {
                 DatabaseOperation.Collection.CreateCollection("Pobrane", 1, function () {
                     var collectionId = this.lastID
-                    self.addToLibAndDb(pdfs, collectionId, function (result) {
+                    adder.addFile(pdfs, collectionId, function (result) {
                         callback && callback(result)
                     })
                 })
             } else if(rows.length === 1) {
                 //console.log('halo')
-                self.addToLibAndDb(pdfs, rows[0].ID_Collection, function (result) {
+                adder.addFile(pdfs, rows[0].ID_Collection, function (result) {
                     callback && callback(result)
                 })
             }
