@@ -2,7 +2,7 @@
  * Created by corsseir on 10/21/16.
  */
 
-const {File} = require('../renderer')
+const {File} = require('../renderer.js')
 const {PDFViewer} = require('./previewFile.js')
 const {Section} = require('../helpers/section.js')
 const {PDFOpener} = require('electron').remote.require('./libs/pdfOpener.js')

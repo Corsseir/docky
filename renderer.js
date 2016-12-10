@@ -25,8 +25,8 @@ const contextMenuItems = {
         'edit': new MenuItem({label: 'Edytuj', click() { new Collection().edit() }}),
         'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Collection().paste() }}),
         'remove': {
-            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new Collection().remove('collection') }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Collection().remove('global') }}),
+            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new Collection().confirm('collection') }}),
+            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Collection().confirm('global') }}),
         },
         'fake': new MenuItem({label: 'Usuń', click() { $('#collection-0').remove() }}),
         'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
@@ -36,13 +36,13 @@ const contextMenuItems = {
         'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
         'cut': new MenuItem({label: 'Wytnij', click() { new File().cut() }}),
         'remove': {
-            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new File().remove('collection') }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
+            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new File().confirm('collection') }}),
+            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().confirm('global') }}),
         },
         'limited': {
             'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
             'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().remove('global') }}),
+            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().confirm('global') }}),
         }
     }
 }
@@ -307,30 +307,42 @@ class Collection {
         new Section().render(section, false)
     }
 
-    remove(mode) {
+    confirm(mode) {
         var collectionID = clickedCollection.attr('id').split('-')[1]
-        var section = new Import().getTemplate('#link-section-default', '#section-default')
-        var sectionType = $('#start-page').data('section')
-        var result
+        var section = new Import().getTemplate('#link-section-confirm', '#section-confirm');
 
-        new Tree().removeCollection(mode)
+        section.find('#id_parent').val(collectionID)
+        section.find('#id_mode').val(mode)
 
-        if(sectionType !== 'default') {
-            new Section().render(section, false)
-
+        if(mode === 'global') {
+            section.find('#confirm-message').text('Usunięte zostaną wszystkie reprezentacje plików oraz\ ' +
+                'ich fizyczna postać z wybranej kolekcji i należących do niej podkolekcji. Czy chcesz kontynuować?')
+        } else {
+            section.find('#confirm-message').text('Usunięte zostaną wszystkie reprezentacje plików\ ' +
+                'z wybranej kolekcji i należących do niej podkolekcji. Czy chcesz kontynuować?')
         }
 
-        new Notification().block(function () {
-            new Notification().show('Usuwanie...', 0, function () {
-                result = ipcRenderer.sendSync('removeCollection', {'data': {'collectionID': collectionID, 'mode': mode}})
+        new Section().render(section, true)
+    }
 
-                if(result.status === 'success') {
-                    new Notification().hide(function () {
-                        new Notification().unblock(function () {
-                            new Notification().show('Usuwanie zakończone pomyślnie', 3000)
+    remove(data) {
+        var section = new Import().getTemplate('#link-section-default', '#section-default')
+        var result
+
+        new Tree().removeCollection(data.mode)
+        new Section().render(section, true, function () {
+            new Notification().block(function () {
+                new Notification().show('Usuwanie...', 0, function () {
+                    result = ipcRenderer.sendSync('removeCollection', {'data': {'collectionID': data.parent, 'mode': data.mode}})
+
+                    if(result.status === 'success') {
+                        new Notification().hide(function () {
+                            new Notification().unblock(function () {
+                                new Notification().show('Usuwanie zakończone pomyślnie', 3000)
+                            })
                         })
-                    })
-                }
+                    }
+                })
             })
         })
     }
@@ -429,21 +441,33 @@ class File {
         new Section().render(section, false)
     }
 
-    remove(mode) {
+    confirm(mode) {
         var fileID = clickedFile.attr('id').split('-')[1]
         var collectionID = clickedFile.parents('li').attr('id').split('-')[1]
-        var section = new Import().getTemplate('#link-section-default', '#section-default');
-        var sectionType = $('#start-page').data('section')
+        var section = new Import().getTemplate('#link-section-confirm', '#section-confirm');
 
-        new Tree().removeFile(mode, fileID)
+        section.find('#id_id').val(fileID)
+        section.find('#id_parent').val(collectionID)
+        section.find('#id_mode').val(mode)
 
-        if(sectionType !== 'default') {
-            new Section().render(section, false, function () {
-                ipcRenderer.send('removeFile', {'data': {'fileID': fileID, 'collectionID': collectionID, 'mode': mode}})
-            })
+        if(mode === 'global') {
+            section.find('#confirm-message').text('Usunięte zostaną wszystkie reprezentacje wybranego pliku oraz\ ' +
+                'jego fizyczna postać z biblioteki aplikacji. Czy chcesz kontynuować?')
         } else {
-            ipcRenderer.send('removeFile', {'data': {'fileID': fileID, 'collectionID': collectionID, 'mode': mode}})
+            section.find('#confirm-message').text('Usunięta zostanie reprezentacja wybranego pliku.\ ' +
+                'Czy chcesz kontynuować?')
         }
+
+        new Section().render(section, true)
+    }
+
+    remove(data) {
+        var section = new Import().getTemplate('#link-section-default', '#section-default');
+
+        new Tree().removeFile(data.mode, data.id)
+        new Section().render(section, false, function () {
+            ipcRenderer.send('removeFile', {'data': {'fileID': data.id, 'collectionID': data.parent, 'mode': data.mode}})
+        })
     }
 
     copy(event) {
@@ -679,4 +703,5 @@ new Start()
 
 exports.Tree = Tree
 exports.File = File
+exports.Collection = Collection
 

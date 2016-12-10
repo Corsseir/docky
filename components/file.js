@@ -78,7 +78,7 @@ class File {
             if (quantity === 1 || mode === 'global') {
                 new Tag().remove(fileID, function () {
                     DatabaseOperation.File.GetFile(fileID, function (err, file) {
-                        if(file.Path.length !== 0) {
+                        if(file.Path !== '') {
                             IO.removeFile(file.Path)
                         }
 
