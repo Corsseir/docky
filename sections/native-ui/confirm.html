@@ -1,0 +1,39 @@
+<template id="section-confirm">
+    <link rel="stylesheet" href="public/stylesheets/native-ui/info.css">
+    <div id="start-page">
+        <div id="file-id" style="display: none;"></div>
+        <table id="info">
+            <tr>
+                <td colspan="2">
+                    <i class="fa fa-file-pdf-o"></i>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="confirm-message" style="white-space: normal; text-align: center;"></td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="id" id="id_id">
+                </td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="parent" id="id_parent">
+                </td>
+            </tr>
+            <tr style="display: none;">
+                <td>
+                    <input type="hidden" name="mode" id="id_mode">
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="button-bar">
+        <div class="button-default" id="back">Nie</div
+        ><div class="button-default" id="yes">Tak</div>
+    </div>
+    <script>
+        // You can also require other files to run in this process
+        require('./renderers/confirm.js')
+    </script>
+</template>
