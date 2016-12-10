@@ -7,8 +7,20 @@ let previousSections = []
 class Section {
     render(section, clear, callback) {
         $('#side-right').fadeOut(150, function () {
-            console.log(previousSections)
-            previousSections.push($('#side-right').contents())
+            if($('#side-right').find('#section-name').text() !== section.find('#section-name').text()) {
+                previousSections.push($('#side-right').contents())
+            } else {
+                if($('#side-right').find('#id_id').length !== 0 && section.find('#id_id').length !== 0) {
+                    if($('#side-right').find('#id_id').val() !== section.find('#id_id').val()) {
+                        previousSections.push($('#side-right').contents())
+                    }
+                } else if($('#side-right').find('#file-id').length !== 0 && section.find('#file-id').length !== 0) {
+                    if($('#side-right').find('#file-id').text() !== section.find('#file-id').text()) {
+                        previousSections.push($('#side-right').contents())
+                    }
+                }
+            }
+
             $('#side-right').empty().append(section)
             $('#side-right').fadeIn(150)
 

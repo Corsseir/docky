@@ -14,35 +14,115 @@ const menuFile = new Menu()
 const menuFileLimited = new Menu()
 const contextMenuItems = {
     'root': {
-        'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
-        'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Collection().add() }}),
-        'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Collection().paste() }}),
-        'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
+        'addFile': new MenuItem({
+            label: 'Dodaj Plik', click() {
+                new File().add()
+            }
+        }),
+        'addCollection': new MenuItem({
+            label: 'Dodaj Kolekcje', click() {
+                new Collection().add()
+            }
+        }),
+        'paste': new MenuItem({
+            label: 'Wklej', enabled: false, click() {
+                new Collection().paste()
+            }
+        }),
+        'refresh': new MenuItem({
+            label: 'Odśwież', click() {
+                new Collection().refresh()
+            }
+        }),
     },
     'collection': {
-        'addFile': new MenuItem({label: 'Dodaj Plik', click() { new File().add() }}),
-        'addCollection': new MenuItem({label: 'Dodaj Kolekcje', click() { new Collection().add() }}),
-        'edit': new MenuItem({label: 'Edytuj', click() { new Collection().edit() }}),
-        'paste': new MenuItem({label: 'Wklej', enabled: false, click() { new Collection().paste() }}),
+        'addFile': new MenuItem({
+            label: 'Dodaj Plik', click() {
+                new File().add()
+            }
+        }),
+        'addCollection': new MenuItem({
+            label: 'Dodaj Kolekcje', click() {
+                new Collection().add()
+            }
+        }),
+        'edit': new MenuItem({
+            label: 'Edytuj', click() {
+                new Collection().edit()
+            }
+        }),
+        'paste': new MenuItem({
+            label: 'Wklej', enabled: false, click() {
+                new Collection().paste()
+            }
+        }),
         'remove': {
-            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new Collection().confirm('collection') }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new Collection().confirm('global') }}),
+            'collection': new MenuItem({
+                label: 'Usuń z kolekcji', click() {
+                    new Collection().confirm('collection')
+                }
+            }),
+            'global': new MenuItem({
+                label: 'Usuń z biblioteki', click() {
+                    new Collection().confirm('global')
+                }
+            }),
         },
-        'fake': new MenuItem({label: 'Usuń', click() { $('#collection-0').remove() }}),
-        'refresh': new MenuItem({label: 'Odśwież', click() { new Collection().refresh() }}),
+        'fake': new MenuItem({
+            label: 'Usuń', click() {
+                $('#collection-0').remove()
+            }
+        }),
+        'refresh': new MenuItem({
+            label: 'Odśwież', click() {
+                new Collection().refresh()
+            }
+        }),
     },
     'file': {
-        'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
-        'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
-        'cut': new MenuItem({label: 'Wytnij', click() { new File().cut() }}),
+        'edit': new MenuItem({
+            label: 'Edytuj', click() {
+                new File().edit()
+            }
+        }),
+        'copy': new MenuItem({
+            label: 'Kopiuj', click() {
+                new File().copy()
+            }
+        }),
+        'cut': new MenuItem({
+            label: 'Wytnij', click() {
+                new File().cut()
+            }
+        }),
         'remove': {
-            'collection': new MenuItem({label: 'Usuń z kolekcji', click() { new File().confirm('collection') }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().confirm('global') }}),
+            'collection': new MenuItem({
+                label: 'Usuń z kolekcji', click() {
+                    new File().confirm('collection')
+                }
+            }),
+            'global': new MenuItem({
+                label: 'Usuń z biblioteki', click() {
+                    new File().confirm('global')
+                }
+            }),
         },
         'limited': {
-            'edit': new MenuItem({label: 'Edytuj', click() { new File().edit() }}),
-            'copy': new MenuItem({label: 'Kopiuj', click() { new File().copy() }}),
-            'global': new MenuItem({label: 'Usuń z biblioteki', click() { new File().confirm('global') }}),
+            'edit': new MenuItem({
+                label: 'Edytuj', click() {
+                    new File().edit()
+                }
+            }),
+            'copy': new MenuItem({
+                label: 'Kopiuj', click() {
+                    new File().copy()
+                }
+            }),
+            'global': new MenuItem({
+                label: 'Usuń z biblioteki', click() {
+                    new File().confirm('global')
+                }
+            }),
         }
     }
 }
@@ -106,7 +186,7 @@ class Tree {
         var quantity
         var i = 0
 
-        if($('#collection-1').length === 0) {
+        if ($('#collection-1').length === 0) {
             self.renderRoot(node)
         }
 
@@ -117,11 +197,11 @@ class Tree {
         data = ipcRenderer.sendSync('getChildren', {'collectionID': node.ID_Collection})
         quantity = data.length
 
-        if(quantity === 0) {
+        if (quantity === 0) {
             callback && callback(ul)
         } else {
             data.forEach(function (item) {
-                if(typeof item.ID_Collection === 'undefined') {
+                if (typeof item.ID_Collection === 'undefined') {
                     ul.append(self.renderFile(item))
                 } else {
                     ul.append(self.renderCollection(item))
@@ -129,7 +209,7 @@ class Tree {
 
                 i++
 
-                if(i === quantity) {
+                if (i === quantity) {
                     callback && callback(ul)
                 }
             })
@@ -152,18 +232,18 @@ class Tree {
         var ul = clickedCollection.children('ul')
 
         if (collectionIcon.hasClass('fa-folder')) {
-            if(ul.length === 0) {
+            if (ul.length === 0) {
                 self.build(clickedCollection.attr('id').split('-')[1], function () {
                     callback && callback({'status': 'success'})
                 })
-            } else if(ul.length !== 0) {
+            } else if (ul.length !== 0) {
                 clickedCollection.children('ul').slideDown(100)
                 callback && callback({'status': 'exist'})
             }
 
             collectionIcon.removeClass('fa-folder')
             collectionIcon.addClass('fa-folder-open')
-        } else if(collectionIcon.hasClass('fa-folder-open')) {
+        } else if (collectionIcon.hasClass('fa-folder-open')) {
             callback && callback({'status': 'open'})
         } else {
             callback && callback({'status': 'failed'})
@@ -177,7 +257,7 @@ class Tree {
         collectionIcon.removeClass('fa-folder-open')
         collectionIcon.addClass('fa-folder')
 
-        if(ul.length !== 0) {
+        if (ul.length !== 0) {
             ul.slideUp(100)
         }
     }
@@ -186,7 +266,7 @@ class Tree {
         var self = this
 
         self.showBranch(function (result) {
-            if(result.status === 'open' || result.status === 'exist') {
+            if (result.status === 'open' || result.status === 'exist') {
                 if (clickedCollection.children('ul').first().children('.c').length === 0) {
                     clickedCollection.children('ul').first().prepend(self.renderCollection(collection))
                 } else {
@@ -203,7 +283,7 @@ class Tree {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         new Section().render(section, false)
 
-        if(data !== null) {
+        if (data !== null) {
             $('#collection-' + data.id).children('span').children('text').first().text(data.name)
         }
     }
@@ -211,7 +291,7 @@ class Tree {
     removeCollection(mode) {
         var files = clickedCollection.find('.f')
 
-        if(mode === 'global') {
+        if (mode === 'global') {
             var fileID
 
             files.each(function (i, file) {
@@ -228,11 +308,11 @@ class Tree {
         var first = parseInt(fileItem.attr('id').split('-')[1])
         var second
 
-        for(var i = 0; i < files.length; i++) {
+        for (var i = 0; i < files.length; i++) {
             second = parseInt($(files[i]).attr('id').split('-')[1])
 
-            if(first <= second) {
-                if(first !== second) {
+            if (first <= second) {
+                if (first !== second) {
                     $(files[i]).before(fileItem)
                 } else {
                     new Notification().show('Plik o podanej nazwie istnieje już w wybranej kolekcji', 3000)
@@ -243,7 +323,7 @@ class Tree {
             }
         }
 
-        if(i === files.length) {
+        if (i === files.length) {
             clickedCollection.children('ul').first().append(fileItem)
             callback && callback()
         }
@@ -253,7 +333,7 @@ class Tree {
         var self = this
 
         self.showBranch(function (result) {
-            if(result.status === 'open' || result.status === 'exist') {
+            if (result.status === 'open' || result.status === 'exist') {
                 if (clickedCollection.children('ul').first().children('.f').length === 0) {
                     clickedCollection.children('ul').first().append(self.renderFile(data))
                 } else {
@@ -270,14 +350,14 @@ class Tree {
         var section = new Import().getTemplate('#link-section-default', '#section-default')
         $('*[id*=file-' + data.id + ']').children('span').children('text').text(data.name)
         new Section().render(section, false, function () {
-            if($('#collection-0').length !== 0) {
+            if ($('#collection-0').length !== 0) {
                 new Search().rebuild()
             }
         })
     }
 
     removeFile(mode, fileID) {
-        if(mode === 'collection') {
+        if (mode === 'collection') {
             clickedFile.remove()
         } else {
             $('*[id*=file-' + fileID + ']').remove()
@@ -314,7 +394,7 @@ class Collection {
         section.find('#id_parent').val(collectionID)
         section.find('#id_mode').val(mode)
 
-        if(mode === 'global') {
+        if (mode === 'global') {
             section.find('#confirm-message').text('Usunięte zostaną wszystkie reprezentacje plików oraz\ ' +
                 'ich fizyczna postać z wybranej kolekcji i należących do niej podkolekcji. Czy chcesz kontynuować?')
         } else {
@@ -333,9 +413,14 @@ class Collection {
         new Section().render(section, true, function () {
             new Notification().block(function () {
                 new Notification().show('Usuwanie...', 0, function () {
-                    result = ipcRenderer.sendSync('removeCollection', {'data': {'collectionID': data.parent, 'mode': data.mode}})
+                    result = ipcRenderer.sendSync('removeCollection', {
+                        'data': {
+                            'collectionID': data.parent,
+                            'mode': data.mode
+                        }
+                    })
 
-                    if(result.status === 'success') {
+                    if (result.status === 'success') {
                         new Notification().hide(function () {
                             new Notification().unblock(function () {
                                 new Notification().show('Usuwanie zakończone pomyślnie', 3000)
@@ -351,7 +436,7 @@ class Collection {
         var collectionID = clickedCollection.attr('id').split('-')[1]
 
         new Tree().showBranch(function () {
-            if(copiedFile !== null) {
+            if (copiedFile !== null) {
                 var fileID = copiedFile.attr('id').split('-')[1]
 
                 new Tree().insertFile(copiedFile.clone(), function () {
@@ -362,7 +447,13 @@ class Collection {
                 var previousCollectionID = cuttedFile.parents('li').first().attr('id').split('-')[1]
 
                 new Tree().insertFile(cuttedFile, function () {
-                    ipcRenderer.send('cutFile', {'data': {'fileID': fileID, 'collectionID': collectionID, 'previousCollectionID': previousCollectionID}})
+                    ipcRenderer.send('cutFile', {
+                        'data': {
+                            'fileID': fileID,
+                            'collectionID': collectionID,
+                            'previousCollectionID': previousCollectionID
+                        }
+                    })
                 })
             }
             $('.f').css('opacity', '1.0')
@@ -372,7 +463,7 @@ class Collection {
     }
 
     refresh() {
-        if(clickedCollection.children('span').children('i').hasClass('fa-folder-open')) {
+        if (clickedCollection.children('span').children('i').hasClass('fa-folder-open')) {
             clickedCollection.children('span').children('i').removeClass('fa-folder-open')
             clickedCollection.children('span').children('i').addClass('fa-folder')
         }
@@ -384,16 +475,16 @@ class Collection {
     handleCollectionClick(event) {
         clickedCollection = $(event.target).closest('li')
 
-        if(event.which === 1) {
+        if (event.which === 1) {
             new Tree().showBranch(function (result) {
-                if(result.status === 'open') {
+                if (result.status === 'open') {
                     new Tree().hideBranch()
                 }
             })
         } else if (event.which === 3) {
-            if($(event.target).closest('li').attr('id') === 'collection-1') {
+            if ($(event.target).closest('li').attr('id') === 'collection-1') {
                 menuRoot.popup(remote.getCurrentWindow())
-            } else if(clickedCollection.children('span').hasClass('collection-fake')) {
+            } else if (clickedCollection.children('span').hasClass('collection-fake')) {
                 menuCollectionFake.popup(remote.getCurrentWindow())
             } else {
                 menuCollection.popup(remote.getCurrentWindow())
@@ -418,13 +509,13 @@ class File {
 
         new Section().render(section, false)
     }
-    
+
     edit(fileID) {
         var section = new Import().getTemplate('#link-section-form-file', '#section-form-file')
         var id = fileID
         var data
 
-        if(typeof id === 'undefined') {
+        if (typeof id === 'undefined') {
             id = clickedFile.attr('id').split('-')[1]
         }
 
@@ -450,7 +541,7 @@ class File {
         section.find('#id_parent').val(collectionID)
         section.find('#id_mode').val(mode)
 
-        if(mode === 'global') {
+        if (mode === 'global') {
             section.find('#confirm-message').text('Usunięte zostaną wszystkie reprezentacje wybranego pliku oraz\ ' +
                 'jego fizyczna postać z biblioteki aplikacji. Czy chcesz kontynuować?')
         } else {
@@ -466,7 +557,13 @@ class File {
 
         new Tree().removeFile(data.mode, data.id)
         new Section().render(section, true, function () {
-            ipcRenderer.send('removeFile', {'data': {'fileID': data.id, 'collectionID': data.parent, 'mode': data.mode}})
+            ipcRenderer.send('removeFile', {
+                'data': {
+                    'fileID': data.id,
+                    'collectionID': data.parent,
+                    'mode': data.mode
+                }
+            })
         })
     }
 
@@ -477,7 +574,7 @@ class File {
         contextMenuItems.root.paste.enabled = true
         copiedFile.css('opacity', '1.0')
     }
-    
+
     cut(event) {
         copiedFile = null
         cuttedFile = clickedFile;
@@ -489,7 +586,7 @@ class File {
     handleFileClick(event) {
         clickedFile = $(event.target).closest('li')
 
-        if(event.which === 1) {
+        if (event.which === 1) {
             var section = new Import().getTemplate('#link-section-info', '#section-info');
             var fileID = clickedFile.attr('id').split('-')[1]
             var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
@@ -508,7 +605,7 @@ class File {
 
             new Section().render(section, false)
         } else if (event.which === 3) {
-            if(clickedFile.parents('li').first().attr('id') === 'collection-0') {
+            if (clickedFile.parents('li').first().attr('id') === 'collection-0') {
                 menuFileLimited.popup(remote.getCurrentWindow())
             } else {
                 menuFile.popup(remote.getCurrentWindow())
@@ -542,19 +639,18 @@ class ButtonBar {
 }
 
 class Search {
-    search() {
+    search(data) {
         var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
         var files = []
-        var data
+        var result
 
         if(fileIDs.length !== 0) {
             var quantity = fileIDs.length
             var i = 0
 
             fileIDs.forEach(function (fileID) {
-                data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
-                console.log(data.file)
-                files.push(data.file)
+                result = ipcRenderer.sendSync('getFile', {'fileID': fileID})
+                files.push(result.file)
                 i++
 
                 if(i === quantity) {
@@ -576,9 +672,55 @@ class Search {
         }
     }
 
+    validateDate(date) {
+        var result = true
+
+        if (date.length === 3) {
+            for (var i = 0; i < date.length; i++) {
+                if (isNaN(date[i])) {
+                    result = false
+                } else if (i === 2) {
+                    if (date[i].length !== 4) {
+                        result = false
+                    }
+                } else {
+                    if (date[i].length !== 2) {
+                        result = false
+                    }
+                }
+            }
+        } else {
+            result = false
+        }
+
+        if (!result) {
+            new Notification().show('Błędny format daty', 3000)
+        }
+
+        return result
+    }
+
+    validate(self, date, callback) {
+        if (date !== '') {
+            var result
+
+            date = date.split('/')
+            result = self.validateDate(date)
+
+            if (result) {
+                date = date[2] + '-' + date[1] + '-' + date[0] + 'T00:00:00.000Z'
+                callback && callback({'status': 'success', 'date': date})
+            } else {
+                callback && callback({'status': 'error'})
+            }
+        } else {
+            callback && callback({'status': 'empty'})
+        }
+    }
+
     handleSearch(event, self) {
-        if(event.which === 13) {
-            if($('#search').val() === '') {
+        if (event.which === 13) {
+            if ($('#search').val() === '') {
                 $('#collection-0').remove()
                 searchPhrase = $('#search').val()
             } else {
@@ -594,12 +736,46 @@ class Search {
 
                 renderedFakeCollection.children('span').addClass('collection-fake')
                 searchPhrase = $('#search').val()
-                $('#collection-1').children('ul').prepend(renderedFakeCollection)
-                $('#collection-0').append(new Tree().renderList())
 
-                new Notification().show('Wyszukiwanie...', 0, function () {
-                    self.search()
-                })
+                if ($('#section-name').text() === 'search') {
+                    var data = new Form().collect()
+
+                    data['phrase'] = searchPhrase
+                    self.validate(self, data.date_from, function (result) {
+                        if(result.status !== 'error') {
+                            if(result.status === 'success') {
+                                data.date_from = result.date
+                            }
+
+                            self.validate(self, data.date_to, function (result) {
+                                if(result.status !== 'error') {
+                                    if(result.status === 'success') {
+                                        data.date_to = result.date
+                                    }
+
+                                    $('#collection-1').children('ul').prepend(renderedFakeCollection)
+                                    $('#collection-0').append(new Tree().renderList())
+
+                                    if(data.date_from !== '' && data.date_to !== '') {
+                                        if(data.date_from < data.date_to) {
+                                            new Notification().show('Wyszukiwanie...', 0, function () {
+                                                self.search(data)
+                                            })
+                                        } else {
+                                            new Notification().show('Pierwsza data musi być wcześniejsza', 3000)
+                                        }
+                                    } else {
+                                        new Notification().show('Wyszukiwanie...', 0, function () {
+                                            self.search(data)
+                                        })
+                                    }
+                                }
+                            })
+                        }
+                    })
+                } else {
+                    var data = {'phrase': searchPhrase}
+                }
             }
         }
     }
@@ -624,7 +800,7 @@ class Start {
         new Notification().hide(function () {
             var path = new Dialog().collection()
 
-            if (!path){
+            if (!path) {
                 return
             }
 
@@ -632,7 +808,7 @@ class Start {
                 new Notification().show('Skanowanie...', 0, function () {
                     var result = ipcRenderer.sendSync('scanCollection', {'path': path})
 
-                    if(result.status === 'found') {
+                    if (result.status === 'found') {
                         var collection = {
                             'Name': 'Zeskanowane',
                             'ID_Collection': result.collectionID
@@ -649,7 +825,7 @@ class Start {
                                 })
                             })
                         })
-                    } else if(result.status === 'notFound') {
+                    } else if (result.status === 'notFound') {
                         new Notification().hide(function () {
                             new Notification().unblock(function () {
                                 new Notification().show('Wybrany folder nie zawiera plików PDF', 3000)
@@ -659,6 +835,12 @@ class Start {
                 })
             })
         })
+    }
+
+    handleSearchAdvanceClick(event) {
+        var section = new Import().getTemplate('#link-section-search', '#section-form-search');
+
+        new Section().render(section, false)
     }
 
     constructor() {
@@ -696,6 +878,7 @@ class Start {
         new Tree().build(1)
 
         $(document).on('click', '#scan', self.handleScanClick)
+        $(document).on('click', '.fa-gear', self.handleSearchAdvanceClick)
     }
 }
 
