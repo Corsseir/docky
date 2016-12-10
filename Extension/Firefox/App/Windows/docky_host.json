@@ -1,7 +1,7 @@
 {
   "name": "docky_host",
   "description": "Host for DockyExtension",
-  "path": "docky_host.bat",
+  "path": "docky_host.exe",
   "type": "stdio",
   "allowed_extensions": [ "Docky@Extension.com" ]
 }
