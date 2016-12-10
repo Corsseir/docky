@@ -640,9 +640,17 @@ class ButtonBar {
 
 class Search {
     search(data) {
-        var fileIDs = ipcRenderer.sendSync('search', {'phrase': searchPhrase})
+        var fileIDs
         var files = []
         var result
+
+        if(typeof data.key === 'undefined') {
+            fileIDs = ipcRenderer.sendSync('search', data)
+        } else {
+            fileIDs = ipcRenderer.sendSync('searchAdvance', data)
+        }
+
+        console.log(fileIDs)
 
         if(fileIDs.length !== 0) {
             var quantity = fileIDs.length
@@ -775,6 +783,12 @@ class Search {
                     })
                 } else {
                     var data = {'phrase': searchPhrase}
+
+                    $('#collection-1').children('ul').prepend(renderedFakeCollection)
+                    $('#collection-0').append(new Tree().renderList())
+                    new Notification().show('Wyszukiwanie...', 0, function () {
+                        self.search(data)
+                    })
                 }
             }
         }

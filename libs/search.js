@@ -97,6 +97,14 @@ class Search {
                 event.returnValue = fileIDs
             })
         })
+
+        ipcMain.on('searchAdvance', function (event, arg) {
+            self.advancedSearch(arg, function (result, fileIDs) {
+                if(result === null) {
+                    event.returnValue = fileIDs
+                }
+            })
+        })
     }
 }
 
