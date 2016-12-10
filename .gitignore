@@ -1,2 +1,4 @@
 node_modules
 .idea
+Database.sqlite3
+DockyLibrary
