@@ -38,7 +38,11 @@ class AddFile {
     static libAndDb(fpath, url, collectionId, callback){
         AddFileHelper.copyFileToLib(fpath,  (err, fileInfo) => {
             if (err){
-                callback({'status': 'error', 'file': err})
+                if (fileInfo){
+                    callback(fileInfo)
+                } else {
+                    callback({'status': 'error', 'file': err})
+                }
             } else {
                 let currentDate = new Date ()
                 fileInfo.Date = currentDate.toLocaleString()
@@ -79,7 +83,7 @@ class AddFileHelper {
                             }
                         })
                     } else {
-                        callback && callback({'status': 'exist', 'file': checksumInDb[0]}, null)
+                        callback && callback({'status': 'exist', 'file': checksumInDb[0]}, {'status': 'exist', 'file': checksumInDb[0]})
                     }
                 }
             })
