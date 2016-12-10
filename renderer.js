@@ -644,7 +644,7 @@ class Search {
         var files = []
         var result
 
-        if(typeof data.key === 'undefined') {
+        if (typeof data.key === 'undefined') {
             fileIDs = ipcRenderer.sendSync('search', data)
         } else {
             fileIDs = ipcRenderer.sendSync('searchAdvance', data)
@@ -652,7 +652,7 @@ class Search {
 
         console.log(fileIDs)
 
-        if(fileIDs.length !== 0) {
+        if (fileIDs.length !== 0) {
             var quantity = fileIDs.length
             var i = 0
 
@@ -661,7 +661,7 @@ class Search {
                 files.push(result.file)
                 i++
 
-                if(i === quantity) {
+                if (i === quantity) {
                     files.forEach(function (file) {
                         $('#collection-0').children('ul').append(new Tree().renderFile(file))
                     })
@@ -726,9 +726,9 @@ class Search {
         }
     }
 
-    handleSearch(event, self) {
+    handleSearch(event, self, advance) {
         if (event.which === 13) {
-            if ($('#search').val() === '') {
+            if ($('#search').val() === '' && !advance) {
                 $('#collection-0').remove()
                 searchPhrase = $('#search').val()
             } else {
@@ -743,29 +743,37 @@ class Search {
                 var renderedFakeCollection = new Tree().renderCollection(fakeCollection)
 
                 renderedFakeCollection.children('span').addClass('collection-fake')
-                searchPhrase = $('#search').val()
 
-                if ($('#section-name').text() === 'search') {
+                if (!advance) {
+                    searchPhrase = $('#search').val()
+                }
+
+                if (advance) {
                     var data = new Form().collect()
 
-                    data['phrase'] = searchPhrase
+                    if (data.name === '') {
+                        data['skip_file'] = true
+                    } else {
+                        data['skip_file'] = false
+                    }
+
                     self.validate(self, data.date_from, function (result) {
-                        if(result.status !== 'error') {
-                            if(result.status === 'success') {
+                        if (result.status !== 'error') {
+                            if (result.status === 'success') {
                                 data.date_from = result.date
                             }
 
                             self.validate(self, data.date_to, function (result) {
-                                if(result.status !== 'error') {
-                                    if(result.status === 'success') {
+                                if (result.status !== 'error') {
+                                    if (result.status === 'success') {
                                         data.date_to = result.date
                                     }
 
                                     $('#collection-1').children('ul').prepend(renderedFakeCollection)
                                     $('#collection-0').append(new Tree().renderList())
 
-                                    if(data.date_from !== '' && data.date_to !== '') {
-                                        if(data.date_from < data.date_to) {
+                                    if (data.date_from !== '' && data.date_to !== '') {
+                                        if (data.date_from < data.date_to) {
                                             new Notification().show('Wyszukiwanie...', 0, function () {
                                                 self.search(data)
                                             })
@@ -804,7 +812,10 @@ class Search {
         var self = this
 
         $(document).on('keypress', '#search', function (event) {
-            self.handleSearch(event, self)
+            self.handleSearch(event, self, false)
+        })
+        $(document).on('click', '#search-button', function (event) {
+            self.handleSearch({'which': 13}, self, true)
         })
     }
 }
