@@ -597,7 +597,7 @@ class File {
             section.find('#info-name').append(data.file.Filename)
             section.find('#info-path').append(data.file.Path)
             section.find('#info-url').append(data.file.Url)
-            section.find('#info-date').append(data.file.Date)
+            section.find('#info-date').append(new Date(data.file.Date).toLocaleString())
             section.find('#info-checksum').append(data.file.Checksum)
             data = ipcRenderer.sendSync('getTags', {'fileID': fileID})
             section.find('#info-tag').append(data.tag.sort().join(' '))
