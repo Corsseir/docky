@@ -406,6 +406,35 @@ DatabaseOperation.MultiInsert = class MultiInsert {
     }
 }
 
+DatabaseOperation.AdvancedSearch = class AdvancedSearch {
+    static getFile (checksum, callback){
+        Database.get('SELECT ID_File FROM File WHERE Checksum = $Checksum', {$Checksum: checksum}, callback)
+    }
+    static getFileFromTo(filename, from, to, callback){
+        if (filename != null){
+            Database.all('SELECT ID_File FROM File WHERE Filename = $Filename and Date >= $From and Date <= $To', {$Filename: filename, $From: from, $To:to}, callback)
+        } else {
+            Database.all('SELECT ID_File FROM File WHERE Date >= $From and Date <= $To', {$From: from, $To:to}, callback)
+        }
+    }
+
+    static getFileFrom(filename, from, callback){
+        if (filename != null){
+            Database.all('SELECT ID_File FROM File WHERE Filename = $Filename and Date >= $From', {$Filename: filename, $From: from}, callback)
+        } else {
+            Database.all('SELECT ID_File FROM File WHERE Date >= $From', {$From: from}, callback)
+        }
+    }
+    static getFileTo(filename, to, callback){
+        if (filename != null){
+            Database.all('SELECT ID_File FROM File WHERE Filename = $Filename and Date <= $To', {$Filename: filename, $To:to}, callback)
+        } else {
+            Database.all('SELECT ID_File FROM File WHERE Date <= $To', { $To:to}, callback)
+        }
+    }
+
+}
+
 exports.Database = Database;
 exports.DatabaseOperation = DatabaseOperation;
 
