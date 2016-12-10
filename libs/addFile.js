@@ -45,7 +45,7 @@ class AddFile {
                 }
             } else {
                 let currentDate = new Date ()
-                fileInfo.Date = currentDate.toLocaleString()
+                fileInfo.Date = currentDate.toISOString()
                 fileInfo.Url = url
                 DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, (err, fid) => {
                     fileInfo.ID_File = fid
