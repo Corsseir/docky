@@ -21,10 +21,14 @@ class AddFile {
     static addFile(fpath, collectionId, tags, callback){
         fpath = fpath.toString()
 
-        if (fpath.substring(0,4) ==='http' || fpath.substring(0,5) ==='https') {
+        if (fpath.substring(0,5) ==='https' || fpath.substring(0,4) ==='http') {
             urlHandler.downloadFile(fpath, (err, path) => {
                 if (err) {
-                    callback && callback({'status': 'error', 'file': err})
+                    if (err === 'wrong_url'){
+                        callback && callback({'status': 'wrong_url', 'file': err})
+                    } else {
+                        callback && callback({'status': 'error', 'file': err})
+                    }
                 } else {
                     this.libAndDb(path, fpath, collectionId, tags, callback)
                 }

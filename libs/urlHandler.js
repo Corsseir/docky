@@ -8,16 +8,17 @@ let fs = require('fs')
 let crypto = require('crypto')
 let temp = require('os').tmpdir()
 let path = require('path')
+let u = require('url')
 
 class URLHandler {
 
     static downloadFile(url, callback) {
-        download(url, function (fname) {
+        UrlHelper.download(url, function (fname) {
             let file = []
             if (fname != ''){
                 callback && callback(null, fname)
             } else {
-                callback && callback('get error', [])
+                callback && callback('wrong_url', [])
             }
         })
     }
@@ -28,8 +29,8 @@ class URLHandler {
                 if (fname === '') {
                     callback&&callback('err', null)
                 } else {
-                    createChecksum(fname, function (checksum) {
-                        let r = rows.filter(isChecksumInArr, checksum)
+                    UrlHelper.createChecksum(fname, function (checksum) {
+                        let r = rows.filter(UrlHelper.isChecksumInArr, checksum)
                         if (r.length > 1) {
                             callback && callback(null, true)
                         } else {
@@ -44,58 +45,76 @@ class URLHandler {
 
 exports.URLHandler = URLHandler
 
-function createChecksum (fpath, callback) {
-    //console.log ('Tworze checksum')
-    fpath = fpath.toString()
-    let checksum = crypto.createHash('md5')
-    let rs = fs.createReadStream(fpath)
-    fs.readFile(fpath, function hashFile(err, data) {
-        checksum.update(data, 'utf8')
-        callback && callback(checksum.digest('hex'))
-    })
-}
+class UrlHelper {
 
-function isChecksumInArr(element){
-    return (element.Checksum === this)
-}
+    static createChecksum (fpath, callback) {
+        //console.log ('Tworze checksum')
+        fpath = fpath.toString()
+        let checksum = crypto.createHash('md5')
+        let rs = fs.createReadStream(fpath)
+        fs.readFile(fpath, function hashFile(err, data) {
+            checksum.update(data, 'utf8')
+            callback && callback(checksum.digest('hex'))
+        })
+    }
 
-function download(url, callback) {
-    let parts = url.split('/')
-    let parts2 = parts[parts.length - 1].split('.')
-    //console.log(temp)
-    let fname = path.join(temp, parts2[0] + '.pdf')
-    //let fname =  temp + '/'  + parts2[0] + '.pdf'
-    //fname = fname.toString()
-    let pdf = fs.createWriteStream(fname)
+    static isChecksumInArr(element){
+        return (element.Checksum === this)
+    }
 
-    if (url.substring(0,5) ==='https') {
-        //console.log('pobieram')
-        https.get(url, function(response) {
-            response.pipe(pdf)
-            response.on('error', function() {
-                //console.log('blad przy pobieraniu')
+    static download(url, callback) {
+        let parts = url.split('/')
+        let parts2 = parts[parts.length - 1].split('.')
+        //console.log(temp)
+        let fname = path.join(temp, parts2[0] + '.pdf')
+        //let fname =  temp + '/'  + parts2[0] + '.pdf'
+        //fname = fname.toString()
+        let pdf = fs.createWriteStream(fname)
+
+        if (url.substring(0,5) ==='https') {
+            //console.log('pobieram')
+            let req = https.get(url, function(response) {
+                response.pipe(pdf)
+                response.on('error', function() {
+                    //console.log('blad przy pobieraniu')
+                    callback && callback('')
+                })
+                response.on('end', function() {
+                    //console.log('pobrano')
+                    if (response.statusCode === 200) {
+                        callback && callback(fname)
+                    } else {
+                        callback && callback('')
+                    }
+                })
+            })
+            req.on('error', (err)=> {
                 callback && callback('')
             })
-            response.on('end', function() {
-                //console.log('pobrano')
-                callback && callback(fname)
+            req.end()
+        } else if (url.substring(0,4) ==='http') {
+            //console.log('pobieram')
+            let req = http.get(url, function(response) {
+                console.log(response.statusCode)
+                response.on('error', function() {
+                    //console.log('blad przy pobieraniu')
+                    callback && callback('')
+                })
+                response.on('end', function() {
+                    //console.log('pobrano')
+                    if (response.statusCode === 200) {
+                        callback && callback(fname)
+                    } else {
+                        callback && callback('')
+                    }
+                })
             })
-        })
-    } else if (url.substring(0,4) ==='http') {
-        //console.log('pobieram')
-        http.get(url, function(response) {
-            response.pipe(pdf)
-            response.on('error', function() {
-                //console.log('blad przy pobieraniu')
+            req.on('error', (err)=> {
                 callback && callback('')
             })
-            response.on('end', function() {
-                //console.log('pobrano')
-                callback && callback(fname)
-            })
-        })
-    } else {
-        //console.log('niepoprawny url')
-        callback && callback('')
+            req.end()
+        } else {
+            callback && callback('')
+        }
     }
 }
