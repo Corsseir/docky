@@ -86,16 +86,16 @@ class UrlHelper {
                     } else {
                         callback && callback('')
                     }
-                    req.end()
                 })
             })
             req.on('error', (err)=> {
                 callback && callback('')
             })
+            req.end()
         } else if (url.substring(0,4) ==='http') {
             //console.log('pobieram')
             let req = http.get(url, function(response) {
-                response.pipe(pdf)
+                //console.log(response.statusCode)
                 response.on('error', function() {
                     //console.log('blad przy pobieraniu')
                     callback && callback('')

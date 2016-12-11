@@ -36,7 +36,6 @@ class AddFile {
         } else {
             this.libAndDb(fpath, '', collectionId, tags, callback)
         }
-
     }
 
     static libAndDb(fpath, url, collectionId, tags, callback){
