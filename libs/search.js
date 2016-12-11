@@ -12,12 +12,14 @@ class Search {
         let fileIds = []
         let tagIds = []
         //Szukanie pliku o podanej nazwie
-        DatabaseOperation.File.GetAllFiles(value, null, null, function getFiles(err, fileRows) {
-            fileIds = fileRows.map(SearchHelper.mapIds)
+        DatabaseOperation.File.GetAllFiles(null, null, null, function getFiles(err, fileRows) {
+            let submatch =  fileRows.filter(SearchHelper.filterSubFilename, value)
+            fileIds = submatch.map(SearchHelper.mapIds)
             //console.log("znalazlem " + fileIds.length + " plikow")
             //Szukanie tagu o podanej nazwie
-            DatabaseOperation.Tag.GetAllTags(null, value, null, null, function getTags(err, tagRows) {
-                tagIds = tagRows.map(SearchHelper.mapTags)
+            DatabaseOperation.Tag.GetAllTags(null, null, null, null, function getTags(err, tagRows) {
+                let submatchT =  tagRows.filter(SearchHelper.filterSubValue, value)
+                tagIds = submatchT.map(SearchHelper.mapTags)
                 //console.log("znalazlem " + tagIds.length + " tagow")
                 DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
                     //console.log("znalazlem " + ftRows.length + " ftrows")
@@ -77,7 +79,6 @@ class Search {
                 if (err){
                     callback && callback(err, null)
                 } else {
-                    rows = rows.map(SearchHelper.mapIds)
                     SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
                         let matchingFiles = idFileT.concat(rows)
                         let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
@@ -134,16 +135,30 @@ class SearchHelper {
         return element.ID_Tag
     }
 
+    static filterSubKey(element){
+        return element.Name.toLowerCase().includes(this)
+    }
+
+    static filterSubFilename(element){
+        return element.Filename.toLowerCase().includes(this)
+    }
+
+    static filterSubValue(element){
+        return element.Value.toLowerCase().includes(this)
+    }
+
 }
 
 class SearchQueries {
 
     static findFile (filename, callback) {
-        DatabaseOperation.File.GetAllFiles(filename, null, null, (err, rows)=> {
+        DatabaseOperation.File.GetAllFiles(null, null, null, (err, rows)=> {
             if (err){
                 callback && callback(err, null)
             } else {
-                callback && callback (null, rows)
+                let submatch =  rows.filter(SearchHelper.filterSubFilename, filename)
+                submatch = submatch.map(SearchHelper.mapIds)
+                callback && callback (null, submatch)
             }
         })
     }
@@ -252,11 +267,14 @@ class SearchQueries {
         let results = []
         let tagIds = []
         //Szukanie tagu o podanej nazwie
-        DatabaseOperation.Tag.GetAllTags(tagname, tagvalue, null, null, function getTags(err, tagRows) {
+        DatabaseOperation.Tag.GetAllTags(tagname, null, null, null, function getTags(err, tagRows) {
+            if (tagvalue != null) {
+                tagRows = tagRows.filter(SearchHelper.filterSubValue, tagvalue)
+            }
             tagIds = tagRows.map(SearchHelper.mapTags)
             //console.log("znalazlem " + tagIds.length + " tagow")
             DatabaseOperation.File_Tag.GetAllFile_Tag(null, null, null, null, function (err, ftRows) {
-               // console.log("znalazlem " + ftRows.length + " ftrows")
+                // console.log("znalazlem " + ftRows.length + " ftrows")
                 ftRows.forEach(function (row){
                     let matchingTags = tagIds.filter(SearchHelper.isTagId, row.ID_Tag)
                     if ( matchingTags.length >= 1) {
