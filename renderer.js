@@ -6,6 +6,7 @@ const {remote} = require('electron')
 const {ipcRenderer} = require('electron')
 const {Menu, MenuItem} = remote
 const {Section} = require('./helpers/section.js')
+const {MetaData} = require('./helpers/metadata.js')
 const {Dialog} = require('electron').remote.require('./helpers/dialog.js')
 const menuRoot = new Menu()
 const menuCollection = new Menu()
@@ -621,9 +622,6 @@ class File {
             var fileID = clickedFile.attr('id').split('-')[1]
             var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
 
-            console.log(data)
-            console.log(location)
-
             section.find('#info-name').append(data.file.Filename)
             section.find('#info-path').append(data.file.Path)
             section.find('#info-url').append(data.file.Url)
@@ -850,7 +848,31 @@ class Search {
 }
 
 class Scan {
+    appendTags(pdfs, callback) {
+        var result = []
+        var data = {}
+        var i = 0
+        var quantity = pdfs.length
+
+        pdfs.forEach(function (pdf) {
+            MetaData.get(pdf, function (tags) {
+                data = {}
+                data['path'] = pdf
+                data['tags'] = tags
+                result.push(data)
+
+                i++
+
+                if(i === quantity) {
+                    callback && callback(result)
+                }
+            })
+        })
+    }
+
     init(mode, collectionID) {
+        var self = this
+
         new Notification().hide(function () {
             var path = new Dialog().collection()
 
@@ -863,38 +885,43 @@ class Scan {
                     var result = ipcRenderer.sendSync('scanCollection', {'path': path, 'mode': mode, 'collectionID': collectionID})
 
                     if (result.status === 'found') {
-                        var quantity = result.fileIDs.length
-                        var i = 0
-                        var files = []
+                        self.appendTags(result.data.pdfs, function (pdfs) {
+                            result.data.pdfs = pdfs
+                            result = ipcRenderer.sendSync('addManyFiles', result.data)
 
-                        if(!collectionID) {
-                            var collection = {
-                                'Name': 'Zeskanowane',
-                                'ID_Collection': result.collectionID
+                            var quantity = result.fileIDs.length
+                            var i = 0
+                            var files = []
+
+                            if(!collectionID) {
+                                var collection = {
+                                    'Name': 'Zeskanowane',
+                                    'ID_Collection': result.collectionID
+                                }
+
+                                $('#collection-' + result.collectionID).remove()
+                                $('#collection-1').children('ul').prepend(new Tree().renderCollection(collection))
+                                clickedCollection = $('#collection-' + result.collectionID)
                             }
 
-                            $('#collection-' + result.collectionID).remove()
-                            $('#collection-1').children('ul').prepend(new Tree().renderCollection(collection))
-                            clickedCollection = $('#collection-' + result.collectionID)
-                        }
+                            result.fileIDs.forEach(function (fileID) {
+                                var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
+                                files.push(data.file)
+                                i++
 
-                        result.fileIDs.forEach(function (fileID) {
-                            var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
-                            files.push(data.file)
-                            i++
+                                if (i === quantity) {
+                                    files.forEach(function (file) {
+                                        $('#collection-' + result.collectionID).children('ul').append(new Tree().renderFile(file))
+                                    })
+                                }
+                            })
 
-                            if (i === quantity) {
-                                files.forEach(function (file) {
-                                    $('#collection-' + result.collectionID).children('ul').append(new Tree().renderFile(file))
-                                })
-                            }
-                        })
-
-                        new Tree().showBranch(function () {
-                            clickedCollection = null
-                            new Notification().hide(function () {
-                                new Notification().unblock(function () {
-                                    new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'' + $('#collection-' + result.collectionID).children('span').children('text').text() + '\'', 3000)
+                            new Tree().showBranch(function () {
+                                clickedCollection = null
+                                new Notification().hide(function () {
+                                    new Notification().unblock(function () {
+                                        new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'' + $('#collection-' + result.collectionID).children('span').children('text').text() + '\'', 3000)
+                                    })
                                 })
                             })
                         })

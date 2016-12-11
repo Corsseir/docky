@@ -18,7 +18,7 @@ const overwritePath = "./DockyLibrary/Zeskanowane/Overwrite"
 
 class AddFile {
 
-    static addFile(fpath, collectionId, callback){
+    static addFile(fpath, collectionId, tags, callback){
         fpath = fpath.toString()
 
         if (fpath.substring(0,4) ==='http' || fpath.substring(0,5) ==='https') {
@@ -26,16 +26,16 @@ class AddFile {
                 if (err) {
                     callback && callback({'status': 'error', 'file': err})
                 } else {
-                    this.libAndDb(path, fpath, collectionId, callback)
+                    this.libAndDb(path, fpath, collectionId, tags, callback)
                 }
             })
         } else {
-            this.libAndDb(fpath, '', collectionId, callback)
+            this.libAndDb(fpath, '', collectionId, tags, callback)
         }
 
     }
 
-    static libAndDb(fpath, url, collectionId, callback){
+    static libAndDb(fpath, url, collectionId, tags, callback){
         AddFileHelper.copyFileToLib(fpath,  (err, fileInfo) => {
             if (err){
                 if (fileInfo){
@@ -47,6 +47,20 @@ class AddFile {
                 let currentDate = new Date ()
                 fileInfo.Date = currentDate.toISOString()
                 fileInfo.Url = url
+
+                if(tags.length != 0) {
+                    if(tags.length === 2) {
+                        fileInfo.Autor = tags[0].author
+                        fileInfo.Tytul = tags[0].title
+                    } else if(tags.length === 1) {
+                        if(typeof tags[0].author !== 'undefined'){
+                            fileInfo.Autor = tags[0].author
+                        } else if(typeof tags[0].title !== 'undefined') {
+                            fileInfo.Tytul = tags[0].title
+                        }
+                    }
+                }
+
                 DO.MultiInsert.InsertAllInfo(collectionId, fileInfo, (err, fid) => {
                     fileInfo.ID_File = fid
                     callback && callback({'status': 'success', 'file': fileInfo})

@@ -57,7 +57,7 @@ class IO {
 
     static inSeqAdd (x, len, pdfs, self, collectionId, fileObj, fileIDs, callback){
         if( x < len ) {
-            adder.addFile(pdfs[x], collectionId, function(result) {
+            adder.addFile(pdfs[x].path, collectionId, pdfs[x].tags, function(result) {
                 if(result.status === 'success') {
                     fileIDs.push(result.file.ID_File)
                 }
@@ -110,13 +110,13 @@ class IO {
             if(rows.length === 0) {
                 DatabaseOperation.Collection.CreateCollection("Pobrane", 1, function () {
                     var collectionId = this.lastID
-                    adder.addFile(pdfs, collectionId, function (result) {
+                    adder.addFile(pdfs, collectionId, [], function (result) {
                         callback && callback(result)
                     })
                 })
             } else if(rows.length === 1) {
                 //console.log('halo')
-                adder.addFile(pdfs, rows[0].ID_Collection, function (result) {
+                adder.addFile(pdfs, rows[0].ID_Collection, [], function (result) {
                     callback && callback(result)
                 })
             }

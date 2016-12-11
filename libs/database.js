@@ -382,11 +382,23 @@ DatabaseOperation.File_Collection = class File_Collection
 
 DatabaseOperation.MultiInsert = class MultiInsert {
     static InsertAllInfo (ID_Collection, fileInfo, callback) {
+        let query = 'INSERT INTO File (Filename, Path, Url, Date, Checksum) VALUES (' + '"' +  fileInfo.Filename.toString() + '","' + fileInfo.Path.toString() + '","' + fileInfo.Url.toString() + '","' + fileInfo.Date.toString() + '","' + fileInfo.Checksum.toString() + '");'+
+            'INSERT INTO File_Collection (ID_File, ID_Collection) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"),' +  ID_Collection  + ');'
+
+        if(typeof fileInfo.Autor !== 'undefined') {
+            query += 'INSERT INTO Tag (Name, Value) VALUES ("author", '+ '"' + fileInfo.Autor.toString()+ '"' + ");"+
+                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT seq FROM sqlite_sequence where name="Tag"));'
+        }
+
+        if(typeof fileInfo.Tytul !== 'undefined') {
+            query += 'INSERT INTO Tag (Name, Value) VALUES ("title",'+ '"' + fileInfo.Tytul.toString()+ '"' + ');'+
+                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT seq FROM sqlite_sequence where name="Tag"));'
+        }
+
         Database.serialize(()=> {
             Database.exec(
                 'BEGIN;' +
-                'INSERT INTO File (Filename, Path, Url, Date, Checksum) VALUES (' + '"' +  fileInfo.Filename.toString() + '","' + fileInfo.Path.toString() + '","' + fileInfo.Url.toString() + '","' + fileInfo.Date.toString() + '","' + fileInfo.Checksum.toString() + '");'+
-                'INSERT INTO File_Collection (ID_File, ID_Collection) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"),' +  ID_Collection  + ');'+
+                query +
                 'COMMIT;'
                 , (err)=> {
                     if (err){

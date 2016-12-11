@@ -7,6 +7,7 @@ const {Database, DatabaseOperation} = require('../libs/database.js')
 const {IO} = require('../libs/io.js')
 const {Dialog} = require('../helpers/dialog.js')
 const {File} = require('./file.js')
+const {MetaData} = require('../helpers/metadata.js')
 
 class Collection {
     get(collectionID, callback) {
@@ -174,9 +175,8 @@ class Collection {
             if(pdfs.length === 0) {
                 callback && callback({'status': 'notFound'})
             } else {
-                IO.addToLibAndDbFromScan(pdfs, data.collectionID, function (collectionID, fileIDs) {
-                    callback && callback({'status': 'found', 'collectionID': collectionID, 'fileIDs': fileIDs})
-                })
+                data['pdfs'] = pdfs
+                callback && callback({'status': 'found', 'data': data})
             }
         })
     }

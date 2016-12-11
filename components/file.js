@@ -22,7 +22,7 @@ class File {
 
     add(data, callback) {
         if (fs.existsSync(data.path) || data.path.substring(0, 4) === 'http') {
-            AddFile.addFile(data.path, data.parent, function (result) {
+            AddFile.addFile(data.path, data.parent, [], function (result) {
                 if (result.status === 'success') {
                     DatabaseOperation.File.GetFile(result.file.ID_File, function (err, file) {
                         result['formFile'] = file
@@ -39,6 +39,12 @@ class File {
         } else {
             callback && callback({'status': 'not_exist'})
         }
+    }
+
+    addMany(data, callback) {
+        IO.addToLibAndDbFromScan(data.pdfs, data.collectionID, function (collectionID, fileIDs) {
+            callback && callback({'collectionID': collectionID, 'fileIDs': fileIDs})
+        })
     }
 
     edit(data, callback) {
@@ -127,6 +133,12 @@ class File {
 
         ipcMain.on('addFile', function (event, arg) {
             self.add(arg.data, function (result) {
+                event.returnValue = result
+            })
+        })
+
+        ipcMain.on('addManyFiles', function (event, arg) {
+            self.addMany(arg, function (result) {
                 event.returnValue = result
             })
         })
