@@ -55,6 +55,8 @@ class Scan {
                 }
             }
         }
+
+        return pdfs
     }
 
 }

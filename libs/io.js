@@ -28,8 +28,14 @@ class IO {
 
     //funkcja przeznaczona do przeszukiwania of wybranego z file dialog roota
 
-    static scan(rootPath, callback) {
-        let pdfs = scanner.scanDirs(rootPath)
+    static scan(rootPath, mode, callback) {
+        let pdfs
+
+        if(mode === 'flat') {
+            pdfs = scanner.scanSingleDir(rootPath)
+        } else {
+            pdfs = scanner.scanDirs(rootPath)
+        }
         //console.log("Znalazłem: " + pdfs.length + " pdfów")
 
         if(pdfs.length === 0) {
@@ -49,27 +55,18 @@ class IO {
         }
     }
 
-    static inSeqAdd (x, len, pdfs, self, collectionId, fileObj, callback){
+    static inSeqAdd (x, len, pdfs, self, collectionId, fileObj, fileIDs, callback){
         if( x < len ) {
             adder.addFile(pdfs[x], collectionId, function(result) {
-                if (result.status === 'success'){
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
-                } else if (result.status === 'exists'){
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
-                } else {
-                    self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, callback)
+                if(result.status === 'success') {
+                    fileIDs.push(result.file.ID_File)
                 }
+
+                self.inSeqAdd(x+1, len, pdfs, self, collectionId, result, fileIDs, callback)
             })
         }
         else {
-            if (len === 1){
-                callback(fileObj)
-            } else {
-                callback({
-                    'status': 'success',
-                    'count': len
-                })
-            }
+            callback && callback(fileIDs)
         }
     }
 
@@ -77,27 +74,34 @@ class IO {
     static addToLibAndDb(pdfs, collectionId, callback) {
         let self = this
         let len = pdfs.length
-        self.inSeqAdd(0, len, pdfs, self, collectionId, {}, callback)
+        self.inSeqAdd(0, len, pdfs, self, collectionId, {}, [], callback)
     }
 
-    static addToLibAndDbFromScan(pdfs, callback) {
+    static addToLibAndDbFromScan(pdfs, collectionID, callback) {
         var self = this;
 
-        DatabaseOperation.Collection.GetAllCollections('Zeskanowane', 1, null, null, function (err, rows) {
-            if(rows.length === 0) {
-                DatabaseOperation.Collection.CreateCollection("Zeskanowane", 1, function () {
-                    var collectionId = this.lastID
-                    self.addToLibAndDb(pdfs, collectionId, function () {
-                        callback && callback(collectionId)
+        if(collectionID) {
+            self.addToLibAndDb(pdfs, collectionID, function (fileIDs) {
+                //console.log('skończyłem')
+                callback && callback(collectionID, fileIDs)
+            })
+        } else {
+            DatabaseOperation.Collection.GetAllCollections('Zeskanowane', 1, null, null, function (err, rows) {
+                if(rows.length === 0) {
+                    DatabaseOperation.Collection.CreateCollection("Zeskanowane", 1, function () {
+                        var collectionId = this.lastID
+                        self.addToLibAndDb(pdfs, collectionId, function (fileIDs) {
+                            callback && callback(collectionId, fileIDs)
+                        })
                     })
-                })
-            } else if(rows.length === 1) {
-                self.addToLibAndDb(pdfs, rows[0].ID_Collection, function () {
-                    //console.log('skończyłem')
-                    callback && callback(rows[0].ID_Collection)
-                })
-            }
-        })
+                } else if(rows.length === 1) {
+                    self.addToLibAndDb(pdfs, rows[0].ID_Collection, function (fileIDs) {
+                        //console.log('skończyłem')
+                        callback && callback(rows[0].ID_Collection, fileIDs)
+                    })
+                }
+            })
+        }
     }
 
     static addToLibAndDbFromUrl(pdfs, callback) {

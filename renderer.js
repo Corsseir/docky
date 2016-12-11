@@ -19,6 +19,18 @@ const contextMenuItems = {
                 new File().add()
             }
         }),
+        'addFiles': {
+            'flat': new MenuItem({
+                label: 'Dodaj Pliki', click() {
+                    new File().addMany('flat')
+                }
+            }),
+            'recursive': new MenuItem({
+                label: 'Dodaj Pliki (rekurencyjnie)', click() {
+                    new File().addMany('recursive')
+                }
+            }),
+        },
         'addCollection': new MenuItem({
             label: 'Dodaj Kolekcje', click() {
                 new Collection().add()
@@ -41,6 +53,18 @@ const contextMenuItems = {
                 new File().add()
             }
         }),
+        'addFiles': {
+            'flat': new MenuItem({
+                label: 'Dodaj Pliki', click() {
+                    new File().addMany('flat')
+                }
+            }),
+            'recursive': new MenuItem({
+                label: 'Dodaj Pliki (rekurencyjnie)', click() {
+                    new File().addMany('recursive')
+                }
+            }),
+        },
         'addCollection': new MenuItem({
             label: 'Dodaj Kolekcje', click() {
                 new Collection().add()
@@ -510,6 +534,12 @@ class File {
         new Section().render(section, false)
     }
 
+    addMany(mode) {
+        var collectionID = clickedCollection.attr('id').split('-')[1]
+
+        new Scan().init(mode, collectionID)
+    }
+
     edit(fileID) {
         var section = new Import().getTemplate('#link-section-form-file', '#section-form-file')
         var id = fileID
@@ -650,8 +680,6 @@ class Search {
         } else {
             fileIDs = ipcRenderer.sendSync('searchAdvance', data)
         }
-
-        console.log(fileIDs)
 
         if (fileIDs.length !== 0) {
             var quantity = fileIDs.length
@@ -821,8 +849,8 @@ class Search {
     }
 }
 
-class Start {
-    handleScanClick(event) {
+class Scan {
+    init(mode, collectionID) {
         new Notification().hide(function () {
             var path = new Dialog().collection()
 
@@ -832,25 +860,45 @@ class Start {
 
             new Notification().block(function () {
                 new Notification().show('Skanowanie...', 0, function () {
-                    var result = ipcRenderer.sendSync('scanCollection', {'path': path})
+                    var result = ipcRenderer.sendSync('scanCollection', {'path': path, 'mode': mode, 'collectionID': collectionID})
 
                     if (result.status === 'found') {
-                        var collection = {
-                            'Name': 'Zeskanowane',
-                            'ID_Collection': result.collectionID
+                        var quantity = result.fileIDs.length
+                        var i = 0
+                        var files = []
+
+                        if(!collectionID) {
+                            var collection = {
+                                'Name': 'Zeskanowane',
+                                'ID_Collection': result.collectionID
+                            }
+
+                            $('#collection-' + result.collectionID).remove()
+                            $('#collection-1').children('ul').prepend(new Tree().renderCollection(collection))
+                            clickedCollection = $('#collection-' + result.collectionID)
                         }
 
-                        $('#collection-' + result.collectionID).remove()
-                        $('#collection-1').children('ul').prepend(new Tree().renderCollection(collection))
-                        clickedCollection = $('#collection-' + result.collectionID)
+                        result.fileIDs.forEach(function (fileID) {
+                            var data = ipcRenderer.sendSync('getFile', {'fileID': fileID})
+                            files.push(data.file)
+                            i++
+
+                            if (i === quantity) {
+                                files.forEach(function (file) {
+                                    $('#collection-' + result.collectionID).children('ul').append(new Tree().renderFile(file))
+                                })
+                            }
+                        })
+
                         new Tree().showBranch(function () {
                             clickedCollection = null
                             new Notification().hide(function () {
                                 new Notification().unblock(function () {
-                                    new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'Zeskanowane\'', 3000)
+                                    new Notification().show('Wszystkie znalezione pliki znajdują się w kolekcji \'' + $('#collection-' + result.collectionID).children('span').children('text').text() + '\'', 3000)
                                 })
                             })
                         })
+
                     } else if (result.status === 'notFound') {
                         new Notification().hide(function () {
                             new Notification().unblock(function () {
@@ -861,6 +909,12 @@ class Start {
                 })
             })
         })
+    }
+}
+
+class Start {
+    handleScanClick(event) {
+        new Scan().init('recursive', false)
     }
 
     handleSearchAdvanceClick(event) {
@@ -877,6 +931,8 @@ class Start {
         copiedFile = null
 
         menuCollection.append(contextMenuItems.collection.addFile)
+        menuCollection.append(contextMenuItems.collection.addFiles.flat)
+        menuCollection.append(contextMenuItems.collection.addFiles.recursive)
         menuCollection.append(contextMenuItems.collection.addCollection)
         menuCollection.append(contextMenuItems.collection.edit)
         menuCollection.append(contextMenuItems.collection.paste)
@@ -893,6 +949,8 @@ class Start {
         menuFileLimited.append(contextMenuItems.file.limited.copy)
         menuFileLimited.append(contextMenuItems.file.limited.global)
         menuRoot.append(contextMenuItems.root.addFile)
+        menuRoot.append(contextMenuItems.root.addFiles.flat)
+        menuRoot.append(contextMenuItems.root.addFiles.recursive)
         menuRoot.append(contextMenuItems.root.addCollection)
         menuRoot.append(contextMenuItems.root.paste)
         menuRoot.append(contextMenuItems.root.refresh)

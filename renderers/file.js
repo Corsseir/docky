@@ -50,7 +50,7 @@ class File {
             if(data.path.length !== 0) {
                 var check = data.path.split('.')
                 var length = check.length
-                if(check[length - 1] != 'pdf') {
+                if(check[length - 1].indexOf('pdf') !== 0) {
                     notify.show('Obsługiwane są tylko pliki PDF', 3000)
                 } else {
                     notify.show('Dodawanie...', 0, function () {

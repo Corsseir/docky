@@ -169,13 +169,13 @@ class Collection {
         })
     }
 
-    scan(path, callback) {
-        IO.scan(path, function(pdfs) {
+    scan(data, callback) {
+        IO.scan(data.path[0], data.mode, function(pdfs) {
             if(pdfs.length === 0) {
                 callback && callback({'status': 'notFound'})
             } else {
-                IO.addToLibAndDbFromScan(pdfs, function (collectionID) {
-                    callback && callback({'status': 'found', 'collectionID': collectionID})
+                IO.addToLibAndDbFromScan(pdfs, data.collectionID, function (collectionID, fileIDs) {
+                    callback && callback({'status': 'found', 'collectionID': collectionID, 'fileIDs': fileIDs})
                 })
             }
         })
@@ -217,7 +217,7 @@ class Collection {
         })
 
         ipcMain.on('scanCollection', function (event, arg) {
-            self.scan(arg.path, function (result) {
+            self.scan(arg, function (result) {
                 event.returnValue = result
             })
         })
