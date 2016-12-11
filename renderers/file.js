@@ -105,6 +105,10 @@ class File {
                             notify.hide(function () {
                                 notify.show('Wskazany plik nie istnieje', 3000)
                             })
+                        } else if (result.status === 'wrong_url') {
+                            notify.hide(function () {
+                                notify.show('Błędny adres URL', 3000)
+                            })
                         } else if (typeof result.file !== 'undefined') {
                             if (result.status === 'exist') {
                                 notify.hide(function () {
