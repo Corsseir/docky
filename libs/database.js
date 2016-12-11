@@ -10,7 +10,7 @@ class DatabaseOperation
     {
         Database.serialize(function ()
         {
-            Database.run('create table if not exists Tag(ID_Tag INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Value TEXT, UNIQUE (Name, Value) ON CONFLICT REPLACE)', ErrorCallback)
+            Database.run('create table if not exists Tag(ID_Tag INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Value TEXT, UNIQUE (Name, Value))', ErrorCallback)
             Database.run('create table if not exists File(ID_File INTEGER PRIMARY KEY AUTOINCREMENT, Filename TEXT, Path TEXT, Url TEXT, Date TEXT, Checksum TEXT)', ErrorCallback)
             Database.run('create table if not exists Collection(ID_Collection INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, ID_ParentCollection INTEGER, FOREIGN KEY(ID_ParentCollection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE)', ErrorCallback)
             Database.run('create table if not exists File_Collection(ID_File INTEGER NOT NULL, ID_Collection INTEGER NOT NULL, FOREIGN KEY(ID_File) REFERENCES File(ID_File) ON DELETE CASCADE, FOREIGN KEY(ID_Collection) REFERENCES Collection(ID_Collection) ON DELETE CASCADE, PRIMARY KEY(ID_File, ID_Collection))', ErrorCallback)
@@ -387,12 +387,12 @@ DatabaseOperation.MultiInsert = class MultiInsert {
 
         if(typeof fileInfo.Autor !== 'undefined') {
             query += 'INSERT INTO Tag (Name, Value) VALUES ("author", '+ '"' + fileInfo.Autor.toString()+ '"' + ");"+
-                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT seq FROM sqlite_sequence where name="Tag"));'
+                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT ID_Tag FROM Tag WHERE Name = "author" and Value = "'+ fileInfo.Autor.toString() +'"));'
         }
 
         if(typeof fileInfo.Tytul !== 'undefined') {
             query += 'INSERT INTO Tag (Name, Value) VALUES ("title",'+ '"' + fileInfo.Tytul.toString()+ '"' + ');'+
-                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT seq FROM sqlite_sequence where name="Tag"));'
+                'INSERT INTO File_Tag (ID_File, ID_Tag) VALUES ((SELECT seq FROM sqlite_sequence WHERE name="File"), (SELECT ID_Tag FROM Tag WHERE Name = "title" and Value = "'+ fileInfo.Tytul.toString() +'"));'
         }
 
         Database.serialize(()=> {
