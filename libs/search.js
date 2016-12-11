@@ -54,13 +54,17 @@ class Search {
                 }
             })
         } else if (cryteria.skip_file && !(cryteria.date_from != '' || cryteria.date_to != '')) {
-            SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                if (err){
-                    callback && callback(err, null)
-                } else {
-                    callback && callback(null, idFileT)
-                }
-            })
+            if (cryteria.key === '' && cryteria.value === ''){
+                callback && callback(null, [])
+            } else {
+                SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
+                    if (err){
+                        callback && callback(err, null)
+                    } else {
+                        callback && callback(null, idFileT)
+                    }
+                })
+            }
         }else if (!cryteria.skip_file && (cryteria.date_from != '' || cryteria.date_to != '')) {
             // jest ogr daty
             SearchQueries.findFile(cryteria.phrase, (err, rows) => {

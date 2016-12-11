@@ -778,7 +778,7 @@ class Search {
                 if (advance) {
                     var data = new Form().collect()
 
-                    if (data.name === '') {
+                    if (data.name === '' || !data.name) {
                         data['skip_file'] = true
                     } else {
                         data['skip_file'] = false
