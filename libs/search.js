@@ -42,7 +42,7 @@ class Search {
             SearchQueries.findFileByChecksum(cryteria.checksum, callback)
         } else if (cryteria.skip_file && (cryteria.date_from != '' || cryteria.date_to != '')){
             // jest ogr daty
-            SearchQueries.findFileByDate('', cryteria.date_from, cryteria.date_to, (err, idDates) => {
+            SearchQueries.findFileByDate(cryteria.date_from, cryteria.date_to, (err, idDates) => {
                 if (err){
                     callback && callback(err, null)
                 } else {
@@ -63,16 +63,19 @@ class Search {
             })
         }else if (!cryteria.skip_file && (cryteria.date_from != '' || cryteria.date_to != '')) {
             // jest ogr daty
-            SearchQueries.findFileByDate(cryteria.phrase, cryteria.date_from, cryteria.date_to, (err, idDates) => {
-                if (err){
-                    callback && callback(err, null)
-                } else {
-                    SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                        let matchingFiles = idFileT.concat(idDates)
-                        let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
-                        callback && callback(null, ids)
-                    })
-                }
+            SearchQueries.findFile(cryteria.phrase, (err, rows) => {
+                SearchQueries.findFileByDate(cryteria.date_from, cryteria.date_to, (err, idDates) => {
+                    let filteredDates = idDates.filter(SearchHelper.filterUsingArray, rows)
+                    if (err){
+                        callback && callback(err, null)
+                    } else {
+                        SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
+                            let matchingFiles = idFileT.concat(filteredDates)
+                            let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                            callback && callback(null, ids)
+                        })
+                    }
+                })
             })
         }else if (!cryteria.skip_file && !(cryteria.date_from != '' || cryteria.date_to != '')) {
             SearchQueries.findFile(cryteria.phrase, (err, rows) => {
@@ -136,15 +139,19 @@ class SearchHelper {
     }
 
     static filterSubKey(element){
-        return element.Name.toLowerCase().includes(this)
+        return element.Name.toLowerCase().includes(this.toLowerCase())
     }
 
     static filterSubFilename(element){
-        return element.Filename.toLowerCase().includes(this)
+        return element.Filename.toLowerCase().includes(this.toLowerCase())
     }
 
     static filterSubValue(element){
-        return element.Value.toLowerCase().includes(this)
+        return element.Value.toLowerCase().includes(this.toLowerCase())
+    }
+
+    static filterUsingArray(element){
+        return this.indexOf(element) > -1
     }
 
 }
@@ -177,10 +184,10 @@ class SearchQueries {
         })
     }
     //zwraca [ID_File]
-    static findFileByDate (filename, from, to, callback) {
-        if (filename != '' && from != '' && to != ''){
+    static findFileByDate (from, to, callback) {
+        if (from != '' && to != ''){
             //from nie null, to nie null
-            DatabaseOperation.AdvancedSearch.getFileFromTo(filename, from, to, (err, rows) => {
+            DatabaseOperation.AdvancedSearch.getFileFromTo(from, to, (err, rows) => {
                 if (err){
                     callback && callback(err, null)
                 } else {
@@ -188,9 +195,9 @@ class SearchQueries {
                     callback && callback (null, fileIds)
                 }
             })
-        } else if (filename != '' && from != '' && to === ''){
+        } else if (from != '' && to === ''){
             //from nie null, tu null
-            DatabaseOperation.AdvancedSearch.getFileFrom(filename, from, null, (err, rows) => {
+            DatabaseOperation.AdvancedSearch.getFileFrom(from, (err, rows) => {
                 if (err){
                     callback && callback(err, null)
                 } else {
@@ -198,40 +205,9 @@ class SearchQueries {
                     callback && callback (null, fileIds)
                 }
             })
-        } else if (filename != '' && from === '' && to != '') {
+        } else if (from === '' && to != '') {
             //from null to nie null
-            DatabaseOperation.AdvancedSearch.getFileTo(filename, null, to, (err, rows) => {
-                if (err){
-                    callback && callback(err, null)
-                } else {
-                    let fileIds = rows.map(SearchHelper.mapIds)
-                    callback && callback (null, fileIds)
-                }
-            })
-        } else  if (filename === '' && from != '' && to != ''){
-            //from nie null, to nie null
-            DatabaseOperation.AdvancedSearch.getFileFromTo(null, from, to, (err, rows) => {
-                if (err){
-                    callback && callback(err, null)
-                } else {
-                    let fileIds = rows.map(SearchHelper.mapIds)
-                    callback && callback (null, fileIds)
-                }
-            })
-        } else if (filename === '' && from != '' && to === '') {
-            //from nie null, tu null
-            DatabaseOperation.AdvancedSearch.getFileFrom(null, from, null, (err, rows) => {
-                if (err){
-                    callback && callback(err, null)
-                } else {
-                    let fileIds = rows.map(SearchHelper.mapIds)
-                    callback && callback (null, fileIds)
-                }
-            })
-
-        } else if (filename === '' && from === '' && to != '') {
-            //from null to nie null
-            DatabaseOperation.AdvancedSearch.getFileTo(null, null, to, (err, rows) => {
+            DatabaseOperation.AdvancedSearch.getFileTo(to, (err, rows) => {
                 if (err){
                     callback && callback(err, null)
                 } else {
@@ -267,7 +243,10 @@ class SearchQueries {
         let results = []
         let tagIds = []
         //Szukanie tagu o podanej nazwie
-        DatabaseOperation.Tag.GetAllTags(tagname, null, null, null, function getTags(err, tagRows) {
+        DatabaseOperation.Tag.GetAllTags(null, null, null, null, function getTags(err, tagRows) {
+            if(tagname != null){
+                tagRows = tagRows.filter(SearchHelper.filterSubKey, tagname)
+            }
             if (tagvalue != null) {
                 tagRows = tagRows.filter(SearchHelper.filterSubValue, tagvalue)
             }
