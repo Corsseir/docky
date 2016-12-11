@@ -74,7 +74,7 @@ DatabaseOperation.Tag = class Tag
         {
             if(OrderBy == null || OrderDirection == null)
             {
-                Database.all('SELECT * FROM Tag WHERE Value = $Value', {$Value: Value}, Callback)
+                Database.all('SELECT * FROM Tag WHERE Value = lower($Value)', {$Value: Value}, Callback)
             }
             else
             {
@@ -85,18 +85,18 @@ DatabaseOperation.Tag = class Tag
         {
             if(OrderBy == null || OrderDirection == null)
             {
-                Database.all('SELECT * FROM Tag WHERE Name = $Name', {$Name: Name}, Callback)
+                Database.all('SELECT * FROM Tag WHERE Name = lower($Name)', {$Name: Name}, Callback)
             }
             else
             {
-                Database.all('SELECT * FROM Tag WHERE N-ame = $Name ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Name: Name}, Callback)
+                Database.all('SELECT * FROM Tag WHERE Name = $Name ORDER BY ' + OrderBy + ' ' + OrderDirection, {$Name: Name}, Callback)
             }
         }
         else
         {
             if(OrderBy == null || OrderDirection == null)
             {
-                Database.all('SELECT * FROM Tag WHERE Name = $Name and Value = $Value', {$Name: Name, $Value: Value}, Callback)
+                Database.all('SELECT * FROM Tag WHERE Name = lower($Name) and Value = lower($Value)', {$Name: Name, $Value: Value}, Callback)
             }
             else
             {
@@ -226,7 +226,7 @@ DatabaseOperation.File = class File
         {
             if(OrderBy == null || OrderDirection == null)
             {
-                Database.all('SELECT * FROM File WHERE Filename = $Filename', {$Filename: Filename}, Callback)
+                Database.all('SELECT * FROM File WHERE Filename = lower($Filename)', {$Filename: Filename}, Callback)
             }
             else
             {
