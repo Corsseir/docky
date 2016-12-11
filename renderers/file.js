@@ -14,7 +14,6 @@ class File {
         PDFJS.workerSrc = 'libs/pdf.worker.js'
         PDFJS.getDocument(path).then(function (pdf) {
             pdf.getMetadata().then(function (metadata) {
-                console.log(metadata)
                 if (typeof metadata !== 'undefined') {
                     if (typeof metadata.info !== 'undefined') {
                         $('#id_tag').val('')

@@ -111,7 +111,6 @@ class File {
     }
 
     cut(data, callback) {
-        console.log(data.previousCollectionID)
         this.copy(data, function (result) {
             if (result.status === 'success') {
                 DatabaseOperation.File_Collection.DeleteFile_Collection(data.fileID, data.previousCollectionID)

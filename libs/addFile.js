@@ -52,7 +52,7 @@ class AddFile {
                 fileInfo.Date = currentDate.toISOString()
                 fileInfo.Url = url
 
-                if(tags.length != 0) {
+                if(tags.length !== 0) {
                     if(tags.length === 2) {
                         fileInfo.Autor = tags[0].author
                         fileInfo.Tytul = tags[0].title

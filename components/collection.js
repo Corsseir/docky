@@ -211,7 +211,6 @@ class Collection {
         ipcMain.on('removeCollection', function (event, arg) {
             self.remove(arg.data, function (data, result) {
                 DatabaseOperation.Collection.DeleteCollection(data.collectionID)
-                console.log(result)
                 event.returnValue = result
             })
         })
