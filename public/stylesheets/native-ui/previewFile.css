@@ -1,6 +1,12 @@
 #start-page {
     display: block!important;
-    overflow: auto;
     height: calc(100% - 40px)!important;
     margin-bottom: 10px;
+    text-align: center;
+}
+
+#pdf {
+    display: inline-block;
+    overflow: auto;
+    height: 100%;
 }

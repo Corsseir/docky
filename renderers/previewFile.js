@@ -6,7 +6,7 @@ const {ipcRenderer} = require('electron')
 const {PDFJS} = require('../libs/pdf.js')
 
 let pdfView
-let scrollbarWidth = 15
+let scrollbarWidth = 17
 
 class PDFViewer {
     constructor() {
@@ -53,7 +53,7 @@ class PDFViewer {
                 $(canvas).css('display', 'none')
             }
 
-            $('#start-page').empty().append(canvas)
+            $('#pdf').empty().append(canvas)
             scale = width / viewport.width
             viewport = page.getViewport(scale)
             canvas.height = viewport.height
