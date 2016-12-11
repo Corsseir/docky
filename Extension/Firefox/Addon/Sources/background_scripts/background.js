@@ -9,7 +9,7 @@ port.onMessage.addListener(function(response)
     if(response.status === "success")
     {
         let message = "Dodano plik: " + response.file.Filename
-        message += "\nData: " + response.file.Date
+        message += "\nData: " + (new Date(response.file.Date)).toLocaleString()
         message += "\nChecksum: " + response.file.Checksum
         browser.notifications.create(
         {
@@ -22,7 +22,7 @@ port.onMessage.addListener(function(response)
     else if(response.status === "exist")
     {
         let message = "Plik już istnieje w bazie pod nazwą: " + response.file.Filename
-        message += "\nData dodania: " + response.file.Date
+        message += "\nData dodania: " + (new Date(response.file.Date)).toLocaleString()
         message += "\nChecksum: " + response.file.Checksum
         browser.notifications.create(
         {
