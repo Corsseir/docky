@@ -47,8 +47,8 @@ class Search {
                     callback && callback(err, null)
                 } else {
                     SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                        let matchingFiles = idFileT.concat(idDates)
-                        let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                        let filteredDates = idFileT.filter(SearchHelper.filterUsingArray, idDates)
+                        let ids = filteredDates.filter(function (element, index){return filteredDates.indexOf(element) === index})
                         callback && callback(null, ids)
                     })
                 }
@@ -70,8 +70,8 @@ class Search {
                         callback && callback(err, null)
                     } else {
                         SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                            let matchingFiles = idFileT.concat(filteredDates)
-                            let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                            let filteredFinal = idFileT.filter(SearchHelper.filterUsingArray, filteredDates)
+                            let ids = filteredFinal.filter(function (element, index){return filteredFinal.indexOf(element) === index})
                             callback && callback(null, ids)
                         })
                     }
@@ -83,8 +83,8 @@ class Search {
                     callback && callback(err, null)
                 } else {
                     SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                        let matchingFiles = idFileT.concat(rows)
-                        let ids = matchingFiles.filter(function (element, index){return matchingFiles.indexOf(element) === index})
+                        let filteredDates = idFileT.filter(SearchHelper.filterUsingArray, rows)
+                        let ids = filteredDates.filter(function (element, index){return filteredDates.indexOf(element) === index})
                         callback && callback(null, ids)
                     })
                 }
@@ -235,7 +235,9 @@ class SearchQueries {
                 callback && callback(null, fileIds)
             })
         } else {
-            callback && callback (null, [])
+            this.findAllTNV(null, null, (fileIds)=> {
+                callback && callback(null, fileIds)
+            })
         }
     }
 
