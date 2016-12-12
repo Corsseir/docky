@@ -16,4 +16,5 @@ exit /b
 
 :run
 
-reg add HKLM\SOFTWARE\Mozilla\NativeMessagingHosts\docky_host /f /ve /t REG_SZ /d %~dp0docky_host.json
+reg add HKLM\SOFTWARE\Mozilla\NativeMessagingHosts\docky_host /f /ve /t REG_SZ /d "%~dp0docky_host.json"
+pause
