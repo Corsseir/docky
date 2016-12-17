@@ -46,24 +46,32 @@ class Search {
                 if (err){
                     callback && callback(err, null)
                 } else {
-                    SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                        let filteredDates = idFileT.filter(SearchHelper.filterUsingArray, idDates)
-                        let ids = filteredDates.filter(function (element, index){return filteredDates.indexOf(element) === index})
-                        callback && callback(null, ids)
-                    })
+                    if(cryteria.key !='' || cryteria.value !=''){
+                        SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
+                            let filteredDates = idFileT.filter(SearchHelper.filterUsingArray, idDates)
+                            let ids = filteredDates.filter(function (element, index){return filteredDates.indexOf(element) === index})
+                            callback && callback(null, ids)
+                        })
+                    } else {
+                        callback && callback(null, idDates)
+                    }
                 }
             })
         } else if (cryteria.skip_file && !(cryteria.date_from != '' || cryteria.date_to != '')) {
             if (cryteria.key === '' && cryteria.value === ''){
                 callback && callback(null, [])
             } else {
-                SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                    if (err){
-                        callback && callback(err, null)
-                    } else {
-                        callback && callback(null, idFileT)
-                    }
-                })
+                if(cryteria.key !='' || cryteria.value !=''){
+                    SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
+                        if (err){
+                            callback && callback(err, null)
+                        } else {
+                            callback && callback(null, idFileT)
+                        }
+                    })
+                } else {
+                    callback && callback(null, [])
+                }
             }
         }else if (!cryteria.skip_file && (cryteria.date_from != '' || cryteria.date_to != '')) {
             // jest ogr daty
@@ -73,11 +81,15 @@ class Search {
                     if (err){
                         callback && callback(err, null)
                     } else {
-                        SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                            let filteredFinal = idFileT.filter(SearchHelper.filterUsingArray, filteredDates)
-                            let ids = filteredFinal.filter(function (element, index){return filteredFinal.indexOf(element) === index})
-                            callback && callback(null, ids)
-                        })
+                        if(cryteria.key !='' || cryteria.value !=''){
+                            SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
+                                let filteredFinal = idFileT.filter(SearchHelper.filterUsingArray, filteredDates)
+                                let ids = filteredFinal.filter(function (element, index){return filteredFinal.indexOf(element) === index})
+                                callback && callback(null, ids)
+                            })
+                        } else {
+                            callback && callback(null, filteredDates)
+                        }
                     }
                 })
             })
@@ -86,11 +98,15 @@ class Search {
                 if (err){
                     callback && callback(err, null)
                 } else {
-                    SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
-                        let filteredDates = idFileT.filter(SearchHelper.filterUsingArray, rows)
-                        let ids = filteredDates.filter(function (element, index){return filteredDates.indexOf(element) === index})
-                        callback && callback(null, ids)
-                    })
+                    if(cryteria.key !='' || cryteria.value !=''){
+                        SearchQueries.findByTag(cryteria.key, cryteria.value, (err, idFileT)=> {
+                            let filteredDates = idFileT.filter(SearchHelper.filterUsingArray, rows)
+                            let ids = filteredDates.filter(function (element, index){return filteredDates.indexOf(element) === index})
+                            callback && callback(null, ids)
+                        })
+                    } else {
+                        callback && callback(null, rows)
+                    }
                 }
             })
         } else {
@@ -156,6 +172,10 @@ class SearchHelper {
 
     static filterUsingArray(element){
         return this.indexOf(element) > -1
+    }
+
+    static filterTagID(element){
+        return this.indexOf(element.ID_Tag) > -1
     }
 
 }
@@ -239,9 +259,7 @@ class SearchQueries {
                 callback && callback(null, fileIds)
             })
         } else {
-            this.findAllTNV(null, null, (fileIds)=> {
-                callback && callback(null, fileIds)
-            })
+            callback && callback(null, [])
         }
     }
 
