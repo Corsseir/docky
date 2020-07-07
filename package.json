@@ -9,7 +9,7 @@
   "author": "Daniel Kukjan, Piotr Maciejko, Michał Malcahn",
   "license": "CC0-1.0",
   "dependencies": {
-    "electron": "^1.4.1",
+    "electron": "^9.1.0",
     "jquery": "^3.1.1",
     "node-ensure": "0.0.0",
     "sqlite3": "^3.1.8"
